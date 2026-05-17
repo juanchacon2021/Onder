@@ -6,6 +6,7 @@
     <title>Onder Barbershop — Dashboard</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <div class="layout">
@@ -14,14 +15,14 @@
                 <img src="Logo 1.png" alt="Onder" class="logo">
             </div>
             <nav class="menu">
-                <a class="menu-item active">Dashboard</a>
-                <a class="menu-item">Clientes</a>
-                <a class="menu-item">Visitas</a>
-                <a class="menu-item">Inventario</a>
-                <a class="menu-item">Pagos</a>
-                <a class="menu-item">Servicios</a>
-                <a class="menu-item">Reportes</a>
-                <a class="menu-item">Configuración</a>
+                <a href="index.html" class="menu-item active"><i class="fas fa-chart-line"></i> Dashboard</a>
+                <a href="clients.html" class="menu-item"><i class="fas fa-users"></i> Clientes</a>
+                <a href="visits.html" class="menu-item"><i class="fas fa-calendar-check"></i> Visitas</a>
+                <a href="inventory.html" class="menu-item"><i class="fas fa-boxes"></i> Inventario</a>
+                <a href="payments.html" class="menu-item"><i class="fas fa-credit-card"></i> Pagos</a>
+                <a href="services.html" class="menu-item"><i class="fas fa-cut"></i> Servicios</a>
+                <a href="reports.html" class="menu-item"><i class="fas fa-file-invoice-dollar"></i> Reportes</a>
+                <a href="settings.html" class="menu-item"><i class="fas fa-cog"></i> Configuración</a>
             </nav>
             <div class="sidebar-bottom">
                 <div class="instagram">Síguenos en Instagram<br><a href="https://instagram.com/onderbarbershop">@onderbarbershop</a></div>
@@ -32,7 +33,7 @@
             <header class="main-header">
                 <div class="search"><input placeholder="Buscar cliente, visita, servicio..."/></div>
                 <div class="header-actions">
-                    <button class="icon-btn">🔔<span class="badge">3</span></button>
+                    <button class="icon-btn"><i class="fas fa-bell"></i><span class="badge">3</span></button>
                     <div class="user">
                         <div class="avatar">A</div>
                         <div class="user-info"><div class="name">Administrador</div><div class="role">Barbero Principal</div></div>
@@ -107,9 +108,9 @@
                 <div class="card reminders">
                     <h3>Recordatorios</h3>
                     <ul>
-                        <li><div class="rem-icon">📅</div><div><strong>24 clientes tienen corte programado</strong><small>en los próximos 7 días</small></div></li>
-                        <li><div class="rem-icon">⚠️</div><div><strong>3 productos en bajo stock</strong><small>revisa el inventario</small></div></li>
-                        <li><div class="rem-icon">💬</div><div><strong>Activar recordatorios por WhatsApp</strong><small>configuración</small></div></li>
+                        <li><div class="rem-icon"><i class="fas fa-calendar-alt"></i></div><div><strong>24 clientes tienen corte programado</strong><small>en los próximos 7 días</small></div></li>
+                        <li><div class="rem-icon"><i class="fas fa-exclamation-triangle"></i></div><div><strong>3 productos en bajo stock</strong><small>revisa el inventario</small></div></li>
+                        <li><div class="rem-icon"><i class="fab fa-whatsapp"></i></div><div><strong>Activar recordatorios por WhatsApp</strong><small>configuración</small></div></li>
                     </ul>
                 </div>
             </section>
