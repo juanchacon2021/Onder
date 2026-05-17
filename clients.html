@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Clientes - Onder</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <header class="topbar">
@@ -15,11 +16,46 @@
         <section class="panel">
             <h3>Panel de Clientes</h3>
             <p>Registro de visitas y próximos recordatorios.</p>
-            <ul style="margin-top:12px;color:var(--muted)">
-                <li>Juan - Último: 2026-05-02 - Próximo: 2026-05-17</li>
-                <li>María - Último: 2026-04-30 - Próximo: 2026-05-15</li>
-            </ul>
+            <div id="clientsTableContainer" style="margin-top:12px;">
+                <table style="width:100%; border-collapse: collapse; color: var(--text);">
+                    <thead style="text-align:left; color:var(--muted)">
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Teléfono</th>
+                            <th>Última Visita</th>
+                            <th>Próxima Visita</th>
+                        </tr>
+                    </thead>
+                    <tbody id="clientsTableBody">
+                        <!-- Data will be injected here -->
+                    </tbody>
+                </table>
+            </div>
         </section>
     </main>
+    <script>
+        const API_URL = 'http://localhost:3000/api';
+        async function fetchClients() {
+            try {
+                const response = await fetch(`${API_URL}/clients`);
+                const clients = await response.json();
+                const tbody = document.getElementById('clientsTableBody');
+                tbody.innerHTML = '';
+                clients.forEach(client => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${client.full_name}</td>
+                        <td>${client.phone || 'N/A'}</td>
+                        <td>${client.last_visit || 'N/A'}</td>
+                        <td>${client.next_visit || 'N/A'}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (error) {
+                console.error('Error fetching clients:', error);
+            }
+        }
+        document.addEventListener('DOMContentLoaded', fetchClients);
+    </script>
 </body>
 </html>
