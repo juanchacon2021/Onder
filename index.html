@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Onder Barbershop — Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="sidebar-top">
+                <img src="Logo 1.png" alt="Onder" class="logo">
+            </div>
+            <nav class="menu">
+                <a class="menu-item active">Dashboard</a>
+                <a class="menu-item">Clientes</a>
+                <a class="menu-item">Visitas</a>
+                <a class="menu-item">Inventario</a>
+                <a class="menu-item">Pagos</a>
+                <a class="menu-item">Servicios</a>
+                <a class="menu-item">Reportes</a>
+                <a class="menu-item">Configuración</a>
+            </nav>
+            <div class="sidebar-bottom">
+                <div class="instagram">Síguenos en Instagram<br><a href="https://instagram.com/onderbarbershop">@onderbarbershop</a></div>
+            </div>
+        </aside>
+
+        <main class="main">
+            <header class="main-header">
+                <div class="search"><input placeholder="Buscar cliente, visita, servicio..."/></div>
+                <div class="header-actions">
+                    <button class="icon-btn">🔔<span class="badge">3</span></button>
+                    <div class="user">
+                        <div class="avatar">A</div>
+                        <div class="user-info"><div class="name">Administrador</div><div class="role">Barbero Principal</div></div>
+                    </div>
+                </div>
+            </header>
+
+            <section class="overview" aria-label="Resumen rápido">
+                <div class="stat"> 
+                    <div class="stat-title">Clientes de hoy</div>
+                    <div class="stat-value">18</div>
+                    <div class="stat-foot">+12% vs ayer</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-title">Próximos cortes</div>
+                    <div class="stat-value">24</div>
+                    <div class="stat-foot">En los próximos 7 días</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-title">Ventas del día</div>
+                    <div class="stat-value">$245.00</div>
+                    <div class="stat-foot">+8% vs ayer</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-title">Servicios realizados</div>
+                    <div class="stat-value">32</div>
+                    <div class="stat-foot">+15% vs ayer</div>
+                </div>
+            </section>
+
+            <section class="grid" aria-live="polite">
+                <div class="card upcoming" id="upcomingCard">
+                    <h3>Próximos cortes programados</h3>
+                    <ul id="upcomingList">
+                        <!-- Items generados por scripts.js -->
+                    </ul>
+                    <a class="link-more" id="viewAll">Ver todos →</a>
+                </div>
+
+                <div class="card inventory">
+                    <h3>Inventario bajo</h3>
+                    <ul class="inventory-list" id="inventoryList">
+                        <!-- Items generados por scripts.js -->
+                    </ul>
+                    <a class="link-more" id="viewInventory">Ver inventario →</a>
+                </div>
+
+                <div class="card chart">
+                    <h3>Servicios más populares</h3>
+                    <div class="donut">
+                        <svg viewBox="0 0 32 32"><circle r="16" cx="16" cy="16" fill="transparent" stroke="#0b8bd1" stroke-width="16" stroke-dasharray="40 60" transform="rotate(-90 16 16)"/><circle r="16" cx="16" cy="16" fill="transparent" stroke="#c4121b" stroke-width="16" stroke-dasharray="30 70" transform="rotate(-90 16 16)"/><circle r="16" cx="16" cy="16" fill="transparent" stroke="#ffb347" stroke-width="16" stroke-dasharray="20 80" transform="rotate(-90 16 16)"/></svg>
+                    </div>
+                    <ul class="legend"><li><span class="dot blue"></span>Corte Clásico <strong>40%</strong></li><li><span class="dot red"></span>Fade <strong>30%</strong></li><li><span class="dot yellow"></span>Barba <strong>20%</strong></li></ul>
+                </div>
+
+                <div class="card activity">
+                    <h3>Actividad reciente</h3>
+                    <ul id="activityList">
+                        <!-- generado por scripts.js -->
+                    </ul>
+                </div>
+
+                <div class="card sales">
+                    <h3>Ventas del día</h3>
+                    <div class="sales-figure" id="salesFigure">$245.00 <small style="color:var(--muted);display:block">+8% vs ayer</small></div>
+                    <div class="sparkline">
+                        <!-- simple SVG line chart placeholder -->
+                        <svg viewBox="0 0 240 60" preserveAspectRatio="none"><polyline fill="none" stroke="#c4121b" stroke-width="3" points="0,50 30,46 60,40 90,34 120,30 150,28 180,22 210,16 240,12"/></svg>
+                    </div>
+                </div>
+
+                <div class="card reminders">
+                    <h3>Recordatorios</h3>
+                    <ul>
+                        <li><div class="rem-icon">📅</div><div><strong>24 clientes tienen corte programado</strong><small>en los próximos 7 días</small></div></li>
+                        <li><div class="rem-icon">⚠️</div><div><strong>3 productos en bajo stock</strong><small>revisa el inventario</small></div></li>
+                        <li><div class="rem-icon">💬</div><div><strong>Activar recordatorios por WhatsApp</strong><small>configuración</small></div></li>
+                    </ul>
+                </div>
+            </section>
+
+            <div id="toast" role="status" aria-live="polite" class="toast" hidden></div>
+            <footer class="main-footer">© 2024 Onder Barbershop. Todos los derechos reservados.</footer>
+        </main>
+    </div>
+    <script src="scripts.js" defer></script>
+</body>
+</html>
