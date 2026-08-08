@@ -5,21 +5,216 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Servicios - Onder</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="Logo NEGRO.png" type="image/png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+        .modal-content {
+            background: var(--panel-dark);
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 560px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--card-shadow);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        .modal-header h2 {
+            font-weight: 600;
+            font-size: 1.4rem;
+        }
+        .modal-close {
+            background: transparent;
+            border: none;
+            color: var(--muted);
+            font-size: 1.8rem;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .modal-close:hover {
+            color: var(--text);
+        }
+        .modal-content label {
+            display: block;
+            margin: 16px 0 6px;
+            color: var(--muted);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        .modal-content input,
+        .modal-content select,
+        .modal-content textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 10px;
+            background: var(--bg-dark);
+            border: 1px solid rgba(255,255,255,0.06);
+            color: var(--text);
+            font-size: 0.95rem;
+        }
+        .modal-content textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+        .modal-content input:focus,
+        .modal-content select:focus,
+        .modal-content textarea:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+        .btn-edit, .btn-delete {
+            background: transparent;
+            border: none;
+            color: var(--muted);
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+        .btn-edit:hover {
+            color: var(--accent-blue);
+            background: rgba(11,139,209,0.1);
+        }
+        .btn-delete:hover {
+            color: var(--accent-red);
+            background: rgba(196,18,27,0.1);
+        }
+        .toast.success {
+            border-left: 4px solid #33d69f;
+        }
+        .toast.error {
+            border-left: 4px solid var(--accent-red);
+        }
+    </style>
 </head>
 <body>
-    <header class="topbar">
-        <div class="brand"><img src="Logo 1.png" alt="Onder logo"><h1>Servicios</h1></div>
-        <nav class="top-actions"><a href="index.html" class="btn ghost">Volver</a></nav>
-    </header>
-    <main class="main">
+    <!-- Sidebar se inyecta acá con sidebar.js -->
+
+    <main class="main-content">
+        <header class="topbar">
+            <div>
+                <h1>Servicios</h1>
+                <div class="meta">Catálogo de servicios</div>
+            </div>
+            <div class="actions">
+                <button class="btn primary" id="btnAddService">
+                    <i class="fa-solid fa-plus"></i> Nuevo Servicio
+                </button>
+                <span class="badge"><i class="fa-solid fa-cut"></i> Total: <strong id="servicesCount">0</strong></span>
+            </div>
+        </header>
+
+        <!-- Barra de búsqueda -->
+        <div style="margin-bottom:20px;display:flex;gap:12px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:200px;">
+                <input type="text" id="searchService" placeholder="Buscar por nombre o descripción..." style="width:100%;padding:12px 16px;border-radius:12px;background:var(--panel-dark);border:1px solid rgba(255,255,255,0.06);color:var(--text);">
+            </div>
+            <button class="btn ghost" id="btnClearSearch"><i class="fa-solid fa-times"></i> Limpiar</button>
+        </div>
+
         <section class="panel">
-            <h3>Servicios Disponibles</h3>
-            <ul style="margin-top:12px;color:var(--muted)">
-                <li>Corte de cabello - $10</li>
-                <li>Afeitado - $8</li>
-                <li>Combo (Corte + Afeitado) - $15</li>
-            </ul>
+            <h2>Servicios Disponibles</h2>
+            <p>Catálogo sincronizado con Supabase.</p>
+
+            <div style="overflow:auto;margin-top:16px">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Servicio</th>
+                            <th>Descripción</th>
+                            <th>Precio</th>
+                            <th>Duración</th>
+                            <th>Estado</th>
+                            <th style="text-align:center;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="servicesTableBody">
+                        <!-- Cargado dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
         </section>
+
+        <footer class="main-footer">© 2024 Onder Barbershop. Todos los derechos reservados.</footer>
     </main>
+
+    <!-- ===== MODAL PARA CREAR/EDITAR SERVICIO ===== -->
+    <div id="serviceModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Nuevo Servicio</h2>
+                <button class="modal-close" id="closeModal">&times;</button>
+            </div>
+            <form id="serviceForm">
+                <input type="hidden" id="serviceId" value="">
+                
+                <label for="name">Nombre del servicio *</label>
+                <input type="text" id="name" placeholder="Ej: Corte Clásico" required>
+
+                <label for="description">Descripción</label>
+                <textarea id="description" placeholder="Describe el servicio..."></textarea>
+
+                <label for="price">Precio *</label>
+                <input type="number" id="price" placeholder="0.00" step="0.01" min="0" required>
+
+                <label for="duration_minutes">Duración (minutos)</label>
+                <input type="number" id="duration_minutes" placeholder="30" min="0">
+
+                <label for="is_active">Estado</label>
+                <select id="is_active">
+                    <option value="true">Activo</option>
+                    <option value="false">Inactivo</option>
+                </select>
+
+                <div style="display:flex;gap:12px;margin-top:20px;justify-content:flex-end;">
+                    <button type="button" class="btn ghost" id="cancelModal">Cancelar</button>
+                    <button type="submit" class="btn primary" id="saveService">
+                        <i class="fa-solid fa-save"></i> Guardar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== MODAL DE CONFIRMACIÓN PARA ELIMINAR ===== -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content" style="max-width:400px;">
+            <div class="modal-header">
+                <h2>Confirmar eliminación</h2>
+                <button class="modal-close" id="closeDeleteModal">&times;</button>
+            </div>
+            <p style="margin:20px 0;">¿Estás seguro de eliminar el servicio <strong id="deleteServiceName"></strong>?</p>
+            <p style="color:var(--muted);font-size:0.9rem;">Esta acción no se puede deshacer.</p>
+            <div style="display:flex;gap:12px;margin-top:20px;justify-content:flex-end;">
+                <button type="button" class="btn ghost" id="cancelDelete">Cancelar</button>
+                <button type="button" class="btn primary" id="confirmDelete" style="background:var(--accent-red);">
+                    <i class="fa-solid fa-trash"></i> Eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="sidebar.js" defer></script>
+    <script src="services.js" defer></script>
 </body>
 </html>

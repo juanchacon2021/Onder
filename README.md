@@ -1,21 +1,47 @@
-Onder Barbershop — Maqueta Dashboard
+Onder Barbershop
 
-Archivos principales:
-- `index.html` — Dashboard oscuro (maqueta frontend).
-- `style.css` — Estilos del tema oscuro y componentes.
-- `scripts.js` — Datos simulados y notificaciones de ejemplo.
-- `login.html`, `users.html`, `clients.html`, `inventory.html`, `services.html`, `payments.html` — páginas de maqueta.
-- `Logo 1.png` — logo usado.
+Arquitectura actual:
+- `server.js` — backend Node/Express con Supabase, login JWT y WhatsApp.
+- `package.json` — scripts y dependencias del servidor.
+- `scripts.js` — frontend conectado al API del dashboard y al login.
+- `index.html`, `login.html`, `users.html`, `clients.html`, `inventory.html`, `services.html`, `payments.html` — vistas del panel.
+- `style.css` — estilos del dashboard y de los formularios básicos.
 
-Cómo probar localmente:
-1. Abrir `index.html` en un navegador moderno (doble click) o usar Live Server en VS Code.
-2. Verás datos simulados y notificaciones (toasts) que aparecen automáticamente.
+Variables de entorno:
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `JWT_SECRET`
+- `WHATSAPP_PROVIDER` (`mock` o `cloud-api`)
+- `WHATSAPP_ACCESS_TOKEN`
+- `WHATSAPP_PHONE_NUMBER_ID`
 
-Siguientes pasos (backend):
-- Implementar API para clientes, visitas, inventario y notificaciones.
-- Conectar llamadas AJAX desde `scripts.js` a endpoints reales.
-- Añadir autenticación y roles en el backend.
+Endpoints principales:
+- `GET /api/health`
+- `GET /api/dashboard/summary`
+- `GET /api/clients`
+- `POST /api/clients`
+- `GET /api/services`
+- `GET /api/inventory`
+- `GET /api/visits/upcoming`
+- `GET /api/payment-methods`
+- `GET /api/payments`
+- `POST /api/payments`
+- `PUT /api/payments/:id`
+- `DELETE /api/payments/:id`
+- `GET /api/roles`
+- `GET /api/users`
+- `POST /api/users`
+- `PUT /api/users/:id`
+- `DELETE /api/users/:id`
+- `POST /api/auth/login`
+- `POST /api/whatsapp/send`
+
+Cómo ejecutarlo:
+1. Copia `.env.example` a `.env` y completa tus credenciales de Supabase.
+2. Instala dependencias con `npm install`.
+3. Levanta el servidor con `npm run dev` o `npm start`.
+4. Abre `http://localhost:3000`.
 
 Notas:
-- Esta maqueta está pensada para ser responsive y accesible; las notificaciones son simuladas para demostración.
-- Si quieres, preparo una versión con WebSocket/Push para recordatorios reales y un ejemplo de API en Node/Python.
+- Si `WHATSAPP_PROVIDER=mock`, el backend responde como si enviara el mensaje, sin tocar Meta.
+- El dashboard usa `/api/dashboard/summary` y cae a datos de respaldo si el backend no responde.

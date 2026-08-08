@@ -5,24 +5,298 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Inventario - Onder</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="Logo NEGRO.png" type="image/png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+        .modal.is-open {
+            display: flex;
+        }
+        .modal-content {
+            background: rgba(15, 21, 24, 0.9);
+            backdrop-filter: blur(16px) saturate(1.4);
+            -webkit-backdrop-filter: blur(16px) saturate(1.4);
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 560px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            border: 1px solid rgba(255,255,255,0.06);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        .modal-header h2 {
+            font-weight: 600;
+            font-size: 1.4rem;
+        }
+        .modal-close {
+            background: transparent;
+            border: none;
+            color: var(--muted);
+            font-size: 1.8rem;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .modal-close:hover {
+            color: var(--text);
+        }
+        .modal-content label {
+            display: block;
+            margin: 16px 0 6px;
+            color: var(--muted);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        .modal-content input,
+        .modal-content select,
+        .modal-content textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 10px;
+            background: rgba(11, 15, 18, 0.6);
+            border: 1px solid rgba(255,255,255,0.06);
+            color: var(--text);
+            font-size: 0.95rem;
+        }
+        .modal-content textarea {
+            min-height: 60px;
+            resize: vertical;
+        }
+        .modal-content input:focus,
+        .modal-content select:focus,
+        .modal-content textarea:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+        .modal-content .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .btn-edit, .btn-delete, .btn-movement {
+            background: transparent;
+            border: none;
+            color: var(--muted);
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+        .btn-edit:hover {
+            color: var(--accent-blue);
+            background: rgba(11,139,209,0.1);
+        }
+        .btn-delete:hover {
+            color: var(--accent-red);
+            background: rgba(196,18,27,0.1);
+        }
+        .btn-movement:hover {
+            color: var(--accent-yellow);
+            background: rgba(255,179,71,0.1);
+        }
+        .toast.success { border-left: 4px solid var(--accent-green); }
+        .toast.error { border-left: 4px solid var(--accent-red); }
+        
+        .stock-badge {
+            font-weight: 600;
+        }
+        .stock-badge.low {
+            color: var(--accent-red);
+        }
+        .stock-badge.ok {
+            color: var(--accent-green);
+        }
+        .stock-badge.warning {
+            color: var(--accent-yellow);
+        }
+    </style>
 </head>
 <body>
-    <header class="topbar">
-        <div class="brand"><img src="Logo 1.png" alt="Onder logo"><h1>Inventario</h1></div>
-        <nav class="top-actions"><a href="index.html" class="btn ghost">Volver</a></nav>
-    </header>
-    <main class="main">
+    <!-- Sidebar se inyecta acá con sidebar.js -->
+
+    <main class="main-content">
+        <header class="topbar">
+            <div>
+                <h1>Inventario</h1>
+                <div class="meta">Control de stock y productos</div>
+            </div>
+            <div class="actions">
+                <button class="btn primary" id="btnAddProduct">
+                    <i class="fa-solid fa-plus"></i> Nuevo Producto
+                </button>
+                <span class="badge"><i class="fa-solid fa-boxes"></i> Total: <strong id="inventoryCount">0</strong></span>
+            </div>
+        </header>
+
+        <!-- Filtros -->
+        <div style="margin-bottom:20px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+            <div style="flex:1;min-width:200px;">
+                <input type="text" id="searchProduct" placeholder="Buscar por nombre o categoría..." style="width:100%;padding:12px 16px;border-radius:12px;background:rgba(11,15,18,0.6);border:1px solid rgba(255,255,255,0.06);color:var(--text);">
+            </div>
+            <label style="display:flex;align-items:center;gap:8px;color:var(--muted);cursor:pointer;">
+                <input type="checkbox" id="filterLowStock"> Solo bajo stock
+            </label>
+            <button class="btn ghost" id="btnClearFilters"><i class="fa-solid fa-times"></i> Limpiar</button>
+        </div>
+
         <section class="panel">
-            <h3>Inventario</h3>
-            <p>Productos y stock.</p>
-            <table style="width:100%;margin-top:12px;border-collapse:collapse">
-                <thead style="text-align:left;color:var(--muted)"><tr><th>Producto</th><th>Stock</th></tr></thead>
-                <tbody>
-                    <tr><td>Cera</td><td>8</td></tr>
-                    <tr><td>Shampoo</td><td>2</td></tr>
-                </tbody>
-            </table>
+            <h2>Productos en Inventario</h2>
+            <p>Productos, stock mínimo y proveedor.</p>
+
+            <div style="overflow:auto;margin-top:16px">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th>Categoría</th>
+                            <th>Stock</th>
+                            <th>Mínimo</th>
+                            <th>Precio Compra</th>
+                            <th>Precio Venta</th>
+                            <th>Proveedor</th>
+                            <th>Estado</th>
+                            <th style="text-align:center;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryTableBody">
+                        <!-- Cargado dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
         </section>
+
+        <footer class="main-footer">© 2024 Onder Barbershop. Todos los derechos reservados.</footer>
     </main>
+
+    <!-- ===== MODAL PARA CREAR/EDITAR PRODUCTO ===== -->
+    <div id="productModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Nuevo Producto</h2>
+                <button class="modal-close" id="closeModal">&times;</button>
+            </div>
+            <form id="productForm">
+                <input type="hidden" id="productId" value="">
+                
+                <label for="name">Nombre del producto *</label>
+                <input type="text" id="name" placeholder="Ej: Gel Fijador" required>
+
+                <label for="category">Categoría</label>
+                <input type="text" id="category" placeholder="Styling, Cuidado, Herramientas...">
+
+                <div class="form-row">
+                    <div>
+                        <label for="stock">Stock *</label>
+                        <input type="number" id="stock" placeholder="0" min="0" required>
+                    </div>
+                    <div>
+                        <label for="minimum_stock">Stock mínimo *</label>
+                        <input type="number" id="minimum_stock" placeholder="5" min="0" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div>
+                        <label for="purchase_price">Precio de compra</label>
+                        <input type="number" id="purchase_price" placeholder="0.00" step="0.01" min="0">
+                    </div>
+                    <div>
+                        <label for="sale_price">Precio de venta</label>
+                        <input type="number" id="sale_price" placeholder="0.00" step="0.01" min="0">
+                    </div>
+                </div>
+
+                <label for="supplier">Proveedor</label>
+                <input type="text" id="supplier" placeholder="Nombre del proveedor">
+
+                <label for="image_url">URL de imagen</label>
+                <input type="url" id="image_url" placeholder="https://ejemplo.com/imagen.jpg">
+
+                <div style="display:flex;gap:12px;margin-top:20px;justify-content:flex-end;">
+                    <button type="button" class="btn ghost" id="cancelModal">Cancelar</button>
+                    <button type="submit" class="btn primary" id="saveProduct">
+                        <i class="fa-solid fa-save"></i> Guardar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== MODAL PARA MOVIMIENTO DE INVENTARIO ===== -->
+    <div id="movementModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="movementModalTitle">Movimiento de Inventario</h2>
+                <button class="modal-close" id="closeMovementModal">&times;</button>
+            </div>
+            <form id="movementForm">
+                <input type="hidden" id="movementProductId" value="">
+                
+                <p style="color:var(--muted);margin-bottom:16px;">
+                    Producto: <strong id="movementProductName"></strong>
+                </p>
+
+                <label for="movement_type">Tipo de movimiento *</label>
+                <select id="movement_type" required>
+                    <option value="entrada">Entrada (agregar stock)</option>
+                    <option value="salida">Salida (quitar stock)</option>
+                    <option value="ajuste">Ajuste (corrección)</option>
+                </select>
+
+                <label for="movement_quantity">Cantidad *</label>
+                <input type="number" id="movement_quantity" placeholder="0" min="1" required>
+
+                <label for="movement_notes">Notas</label>
+                <textarea id="movement_notes" placeholder="Motivo del movimiento..."></textarea>
+
+                <div style="display:flex;gap:12px;margin-top:20px;justify-content:flex-end;">
+                    <button type="button" class="btn ghost" id="cancelMovement">Cancelar</button>
+                    <button type="submit" class="btn primary" id="saveMovement">
+                        <i class="fa-solid fa-arrows-rotate"></i> Registrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== MODAL DE CONFIRMACIÓN PARA ELIMINAR ===== -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content" style="max-width:400px;">
+            <div class="modal-header">
+                <h2>Confirmar eliminación</h2>
+                <button class="modal-close" id="closeDeleteModal">&times;</button>
+            </div>
+            <p style="margin:20px 0;">¿Estás seguro de eliminar el producto <strong id="deleteProductName"></strong>?</p>
+            <p style="color:var(--muted);font-size:0.9rem;">Esta acción no se puede deshacer.</p>
+            <div style="display:flex;gap:12px;margin-top:20px;justify-content:flex-end;">
+                <button type="button" class="btn ghost" id="cancelDelete">Cancelar</button>
+                <button type="button" class="btn primary" id="confirmDelete" style="background:var(--accent-red);">
+                    <i class="fa-solid fa-trash"></i> Eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="sidebar.js" defer></script>
+    <script src="inventory.js" defer></script>
 </body>
 </html>

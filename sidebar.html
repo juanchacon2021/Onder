@@ -1,0 +1,53 @@
+<!-- sidebar.html - fragmento reutilizable con glassmorphism -->
+<aside class="sidebar" id="sidebar">
+  <div>
+    <div class="sidebar-brand">
+      <img src="Logo 1.png" alt="Onder">
+      <span>Onder</span>
+    </div>
+    <nav class="nav">
+      <a href="index.html" class="nav-item" data-module="dashboard">
+        <i class="fas fa-chart-pie"></i>
+        <span class="label">Dashboard</span>
+      </a>
+      <a href="clients.html" class="nav-item" data-module="clientes">
+        <i class="fas fa-users"></i>
+        <span class="label">Clientes</span>
+        <span class="badge-number" id="clientsBadge">0</span>
+      </a>
+      <a href="services.html" class="nav-item" data-module="servicios">
+        <i class="fas fa-cut"></i>
+        <span class="label">Servicios</span>
+        <span class="badge-number" id="servicesBadge">0</span>
+      </a>
+      <a href="inventory.html" class="nav-item" data-module="inventario">
+        <i class="fas fa-boxes"></i>
+        <span class="label">Inventario</span>
+        <span class="badge-dot" id="inventoryDot"></span>
+      </a>
+      <a href="payments.html" class="nav-item" data-module="pagos">
+        <i class="fas fa-credit-card"></i>
+        <span class="label">Pagos</span>
+      </a>
+      <a href="users.html" class="nav-item" data-module="usuarios">
+        <i class="fas fa-user-cog"></i>
+        <span class="label">Usuarios</span>
+      </a>
+      <a href="#" class="nav-item" data-module="reportes">
+        <i class="fas fa-file-alt"></i>
+        <span class="label">Reportes</span>
+      </a>
+    </nav>
+  </div>
+
+  <div class="sidebar-footer">
+    <a href="https://instagram.com/onderbarbershop" target="_blank" class="footer-item instagram">
+      <i class="fab fa-instagram"></i>
+      <span class="label">@onderbarbershop</span>
+    </a>
+    <div class="footer-item logout" id="logoutBtn">
+      <i class="fas fa-sign-out-alt"></i>
+      <span class="label">Cerrar sesión</span>
+    </div>
+  </div>
+</aside>
