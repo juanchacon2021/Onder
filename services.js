@@ -4,6 +4,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const tbody = document.getElementById('servicesTableBody');
     const servicesCount = document.getElementById('servicesCount');
     const searchInput = document.getElementById('searchService');
+    const getAuthHeaders = () => {
+        const token = localStorage.getItem('onder_token') || sessionStorage.getItem('onder_token');
+        return token ? { Authorization: `Bearer ${token}` } : {};
+    };
     const btnClearSearch = document.getElementById('btnClearSearch');
     const btnAddService = document.getElementById('btnAddService');
     
@@ -29,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function() {
     async function fetchServices(search = '') {
         try {
             const url = search ? `/api/services?search=${encodeURIComponent(search)}` : '/api/services';
-            const response = await fetch(url);
+            const response = await fetch(url, { headers: getAuthHeaders() });
             if (!response.ok) throw new Error('Error al cargar servicios');
             const data = await response.json();
             allServices = data;
@@ -102,7 +106,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const response = await fetch('/api/services', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...getAuthHeaders()
+                },
                 body: JSON.stringify(data)
             });
 
@@ -158,7 +165,8 @@ document.addEventListener('DOMContentLoaded', function() {
     async function deleteService(id) {
         try {
             const response = await fetch(`/api/services/${id}`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                headers: getAuthHeaders()
             });
             
             const responseText = await response.text();

@@ -8,36 +8,426 @@
     <link rel="icon" href="Logo NEGRO.png" type="image/png">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        body.login-page {
+            min-height: 100vh;
+            display: block;
+            background:
+                radial-gradient(circle at top left, rgba(196, 18, 27, 0.22), transparent 28%),
+                radial-gradient(circle at 85% 20%, rgba(11, 139, 209, 0.18), transparent 24%),
+                linear-gradient(180deg, #040608 0%, #0b0f12 100%);
+            overflow-x: hidden;
+        }
+        body.login-page::before,
+        body.login-page::after {
+            content: '';
+            position: fixed;
+            inset: auto;
+            border-radius: 999px;
+            filter: blur(30px);
+            opacity: 0.35;
+            pointer-events: none;
+            animation: floatGlow 16s ease-in-out infinite;
+        }
+        body.login-page::before {
+            width: 320px;
+            height: 320px;
+            left: -90px;
+            top: 18%;
+            background: rgba(196, 18, 27, 0.26);
+        }
+        body.login-page::after {
+            width: 280px;
+            height: 280px;
+            right: -70px;
+            bottom: 8%;
+            background: rgba(11, 139, 209, 0.22);
+            animation-delay: -8s;
+        }
+        .login-shell {
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 1.1fr minmax(360px, 460px);
+            gap: 24px;
+            align-items: stretch;
+            padding: 24px;
+            position: relative;
+            z-index: 1;
+        }
+        .login-hero,
+        .login-panel {
+            border: 1px solid rgba(255,255,255,0.06);
+            background: rgba(15, 21, 24, 0.58);
+            backdrop-filter: blur(18px) saturate(1.4);
+            -webkit-backdrop-filter: blur(18px) saturate(1.4);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+        }
+        .login-hero {
+            border-radius: 28px;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+            position: relative;
+        }
+        .login-hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(196,18,27,0.08), transparent 45%, rgba(11,139,209,0.08));
+            pointer-events: none;
+        }
+        .hero-top,
+        .hero-bottom,
+        .login-panel {
+            position: relative;
+            z-index: 1;
+        }
+        .brand-mark {
+            display: inline-flex;
+            align-items: center;
+            gap: 14px;
+            padding: 10px 14px;
+            border-radius: 18px;
+            background: rgba(255,255,255,0.04);
+            width: fit-content;
+        }
+        .brand-mark img {
+            width: 46px;
+            height: 46px;
+            object-fit: cover;
+            border-radius: 14px;
+            background: rgba(255,255,255,0.04);
+        }
+        .brand-mark h1 {
+            font-family: Poppins, Inter, sans-serif;
+            font-size: 1.1rem;
+            line-height: 1.1;
+            margin: 0;
+        }
+        .hero-copy {
+            max-width: 560px;
+            margin-top: 48px;
+        }
+        .hero-copy h2 {
+            font-family: Poppins, Inter, sans-serif;
+            font-size: clamp(2.4rem, 5vw, 4.6rem);
+            line-height: 0.95;
+            letter-spacing: -0.06em;
+            margin: 0 0 18px;
+        }
+        .hero-copy p {
+            color: var(--muted);
+            font-size: 1.05rem;
+            line-height: 1.7;
+            max-width: 48ch;
+            margin: 0;
+        }
+        .hero-points {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 14px;
+            margin-top: 40px;
+        }
+        .hero-point {
+            padding: 16px;
+            border-radius: 18px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .hero-point i {
+            color: var(--accent-blue);
+            margin-bottom: 12px;
+            font-size: 1.05rem;
+        }
+        .hero-point strong {
+            display: block;
+            margin-bottom: 6px;
+        }
+        .hero-point span {
+            color: var(--muted);
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        .hero-bottom {
+            margin-top: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 18px;
+            flex-wrap: wrap;
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.04);
+        }
+        .login-panel {
+            border-radius: 28px;
+            padding: 34px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .login-card-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 22px;
+        }
+        .login-kicker {
+            color: var(--accent-red);
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            font-size: 0.78rem;
+            margin-bottom: 8px;
+        }
+        .login-panel h2 {
+            font-family: Poppins, Inter, sans-serif;
+            font-size: 1.9rem;
+            margin: 0 0 10px;
+        }
+        .login-panel .subtitle {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-top: 22px;
+        }
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .field label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--muted);
+        }
+        .input-shell {
+            position: relative;
+        }
+        .login-panel input {
+            width: 100%;
+            padding: 14px 46px 14px 14px;
+            border-radius: 14px;
+            background: rgba(11, 15, 18, 0.72);
+            border: 1px solid rgba(255,255,255,0.07);
+            color: var(--text);
+            transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .login-panel input:focus {
+            outline: none;
+            border-color: rgba(11,139,209,0.9);
+            box-shadow: 0 0 0 4px rgba(11,139,209,0.12);
+            transform: translateY(-1px);
+        }
+        .field-icon {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--muted);
+            pointer-events: none;
+        }
+        .password-toggle {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: none;
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            padding: 6px;
+        }
+        .password-toggle:hover {
+            color: var(--text);
+        }
+        .login-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            margin-top: 4px;
+        }
+        .login-actions .btn {
+            min-width: 150px;
+            justify-content: center;
+        }
+        .remember-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+        .login-footer {
+            margin-top: 24px;
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+        .login-footer a {
+            color: var(--text);
+            text-decoration: none;
+        }
+        .login-footer a:hover {
+            color: var(--accent-blue);
+        }
+        .login-error {
+            padding: 12px 14px;
+            border-radius: 14px;
+            background: rgba(196,18,27,0.12);
+            color: #ffb8bb;
+            border: 1px solid rgba(196,18,27,0.22);
+            line-height: 1.5;
+        }
+        .login-error[hidden] {
+            display: none;
+        }
+        .submit-loading {
+            opacity: 0.92;
+            cursor: progress;
+        }
+        .submit-loading .spinner {
+            display: inline-block;
+        }
+        .submit-loading .label {
+            display: none;
+        }
+        .spinner {
+            display: none;
+        }
+        .demo-strip {
+            margin-top: 18px;
+            padding: 14px 16px;
+            border-radius: 16px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.05);
+            color: var(--muted);
+            font-size: 0.92rem;
+        }
+        @keyframes floatGlow {
+            0%, 100% { transform: translateY(0) translateX(0) scale(1); }
+            50% { transform: translateY(-10px) translateX(8px) scale(1.05); }
+        }
+        @media (max-width: 980px) {
+            .login-shell {
+                grid-template-columns: 1fr;
+            }
+            .login-hero {
+                min-height: 320px;
+            }
+            .hero-points {
+                grid-template-columns: 1fr;
+            }
+        }
+        @media (max-width: 640px) {
+            .login-shell {
+                padding: 14px;
+            }
+            .login-hero,
+            .login-panel {
+                border-radius: 22px;
+                padding: 22px;
+            }
+            .login-actions .btn {
+                width: 100%;
+            }
+            .login-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
 </head>
-<body>
-    <header class="topbar">
-        <div class="brand">
-            <img src="Logo 1.png" alt="Onder logo">
-            <h1>Onder Barbershop</h1>
-        </div>
-    </header>
+<body class="login-page">
+    <main class="login-shell">
+        <section class="login-hero" aria-label="Presentación de Onder Barbershop">
+            <div class="hero-top">
+                <div class="brand-mark">
+                    <img src="Logo 1.png" alt="Onder logo">
+                    <h1>Onder Barbershop</h1>
+                </div>
 
-    <main>
-        <section class="form-card">
-            <h2>Iniciar sesión</h2>
-            <form id="loginForm">
-                <label for="email">Correo</label>
-                <input type="email" id="email" placeholder="tu@correo.com">
+                <div class="hero-copy">
+                    <h2>Un corte al estilo del Caballero</h2>
+                </div>
+            </div>
 
-                <label for="password">Contraseña</label>
-                <input type="password" id="password" placeholder="••••••••">
+            <div class="hero-bottom">
+                <div class="hero-badge"><i class="fa-solid fa-scissors"></i> Panel de administración para la barbería</div>
+                <span>Instagram: <a href="https://instagram.com/onderbarbershop" target="_blank" rel="noreferrer">@onderbarbershop</a></span>
+            </div>
+        </section>
 
-                <p id="loginError" class="form-error" hidden></p>
+        <section class="login-panel" aria-label="Formulario de inicio de sesión">
+            <div class="login-card-top">
+                <div>
+                    <div class="login-kicker">Bienvenido</div>
+                    <h2>Iniciar sesión</h2>
+                    <p class="subtitle">Usa tu correo corporativo para entrar al panel.</p>
+                </div>
+            </div>
 
-                <div style="display:flex;gap:10px;align-items:center;justify-content:space-between">
-                    <button class="btn primary" type="submit"><i class="fa-solid fa-right-to-bracket"></i> Entrar</button>
-                    <a href="index.html" class="btn ghost">Volver</a>
+            <form id="loginForm" class="login-form">
+                <div class="field">
+                    <label for="email">Correo</label>
+                    <div class="input-shell">
+                        <input type="email" id="email" placeholder="tu@correo.com" autocomplete="email" required>
+                        <i class="fa-solid fa-envelope field-icon" aria-hidden="true"></i>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="password">Contraseña</label>
+                    <div class="input-shell">
+                        <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" required>
+                        <button type="button" class="password-toggle" id="togglePassword" aria-label="Mostrar u ocultar contraseña">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <p id="loginError" class="login-error" hidden></p>
+
+                <div class="login-actions">
+                    <label class="remember-row">
+                        <input type="checkbox" id="rememberSession">
+                        Recordar sesión
+                    </label>
+                    <button class="btn primary" type="submit" id="loginSubmit">
+                        <i class="fa-solid fa-right-to-bracket"></i>
+                        <span class="label">Entrar</span>
+                        <span class="spinner"><i class="fa-solid fa-spinner fa-spin"></i> Entrando</span>
+                    </button>
                 </div>
             </form>
+
+            <div class="login-footer">
+                <span>Soporte interno del panel</span>
+                <a href="https://instagram.com/onderbarbershop" target="_blank" rel="noreferrer">@onderbarbershop</a>
+            </div>
         </section>
     </main>
 
-    <footer class="site-footer">Instagram: <a href="https://instagram.com/onderbarbershop">@onderbarbershop</a></footer>
-    <script src="scripts.js" defer></script>
+    <script src="login.js" defer></script>
 </body>
 </html>

@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const $activityList = document.getElementById('activityList');
   const $salesFigure = document.getElementById('salesFigure');
   const $toast = document.getElementById('toast');
+  const $notificationsList = document.getElementById('notificationsList');
   const $clientsTableBody = document.getElementById('clientsTableBody');
   const $inventoryTableBody = document.getElementById('inventoryTableBody');
   const $servicesTableBody = document.getElementById('servicesTableBody');
@@ -117,12 +118,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 4000);
   }
 
+  function getAuthHeaders(extra = {}) {
+    const token = localStorage.getItem('onder_token') || sessionStorage.getItem('onder_token');
+    return {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...extra
+    };
+  }
+
   async function requestJson(url, options = {}) {
     const response = await fetch(url, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...(options.headers || {})
-      },
+      headers: getAuthHeaders(options.headers || {}),
       ...options
     });
 
@@ -313,26 +320,160 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function buildReminderItems(clients) {
+    if (!Array.isArray(clients)) {
+      return [];
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return clients
+      .map((client) => {
+        if (!client.next_visit) {
+          return null;
+        }
+
+        const visitDate = new Date(client.next_visit);
+        if (Number.isNaN(visitDate.getTime())) {
+          return null;
+        }
+
+        const diffDays = Math.round((visitDate - today) / 86400000);
+        if (diffDays <= -1) {
+          return {
+            title: `${client.full_name || 'Cliente'} debe un corte`,
+            meta: `Fecha: ${formatLongDate(client.next_visit)} • atrasado`,
+            type: 'danger',
+            icon: 'fa-solid fa-triangle-exclamation'
+          };
+        }
+
+        if (diffDays <= 7) {
+          return {
+            title: `${client.full_name || 'Cliente'} está próximo a cortarse`,
+            meta: `Falta ${diffDays} día${diffDays === 1 ? '' : 's'} para su cita`,
+            type: 'warning',
+            icon: 'fa-regular fa-bell'
+          };
+        }
+
+        return null;
+      })
+      .filter(Boolean)
+      .slice(0, 4);
+  }
+
+  function renderNotifications(notifications) {
+    if (!$notificationsList) return;
+
+    if (!Array.isArray(notifications) || !notifications.length) {
+      $notificationsList.innerHTML = `
+        <li>
+          <div class="rem-icon"><i class="fa-solid fa-circle-check"></i></div>
+          <div>
+            <strong>No hay notificaciones pendientes</strong>
+            <small>Todo está al día</small>
+          </div>
+        </li>
+      `;
+      return;
+    }
+
+    const pending = notifications.filter((item) => item.is_sent === false || item.sent === false);
+    const items = (pending.length ? pending : notifications).slice(0, 3);
+
+    $notificationsList.innerHTML = items.map((item) => {
+      const icon = item.is_sent === false ? 'fa-regular fa-bell' : 'fa-solid fa-check';
+      const state = item.is_sent === false ? 'Pendiente' : 'Enviada';
+      return `
+        <li>
+          <div class="rem-icon"><i class="${icon}"></i></div>
+          <div>
+            <strong>${item.title || 'Notificación'}</strong>
+            <small>${state} • ${formatLongDate(item.created_at)}</small>
+          </div>
+        </li>
+      `;
+    }).join('');
+  }
+
+  function renderReminderAlerts(reminders) {
+    if (!$notificationsList) return;
+
+    if (!Array.isArray(reminders) || !reminders.length) {
+      $notificationsList.innerHTML = `
+        <li>
+          <div class="rem-icon"><i class="fa-solid fa-circle-check"></i></div>
+          <div>
+            <strong>No hay recordatorios activos</strong>
+            <small>Todos los clientes están al día</small>
+          </div>
+        </li>
+      `;
+      return;
+    }
+
+    $notificationsList.innerHTML = reminders.map((item) => `
+      <li>
+        <div class="rem-icon ${item.type === 'danger' ? 'danger' : 'warning'}"><i class="${item.icon}"></i></div>
+        <div>
+          <strong>${item.title}</strong>
+          <small>${item.meta}</small>
+        </div>
+      </li>
+    `).join('');
+  }
+
+  async function loadNotifications() {
+    if (!$notificationsList) return;
+
+    try {
+      const notifications = await requestJson('/api/notifications');
+      renderNotifications(notifications);
+    } catch (error) {
+      $notificationsList.innerHTML = `
+        <li>
+          <div class="rem-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+          <div>
+            <strong>No se pudieron cargar las notificaciones</strong>
+            <small>${error.message}</small>
+          </div>
+        </li>
+      `;
+    }
+  }
+
   async function loadDashboard() {
     if (!$upcomingList && !$inventoryList && !$activityList) {
       return;
     }
 
     try {
-      const dashboard = await requestJson('/api/dashboard/summary');
+      const [dashboard, clients] = await Promise.all([
+        requestJson('/api/dashboard/summary'),
+        requestJson('/api/clients')
+      ]);
+
       renderMetrics(dashboard.metrics, dashboard.currency);
       renderUpcoming(dashboard.upcomingVisits);
       renderInventory(dashboard.lowStockItems);
       renderActivity(dashboard.recentActivity);
+      renderReminderAlerts(buildReminderItems(clients));
 
-      if (dashboard.metrics.notifications) {
-        showToast(`Tienes ${dashboard.metrics.notifications} notificaciones pendientes`);
+      const reminderCount = buildReminderItems(clients).length;
+      if (reminderCount > 0) {
+        showToast(`Tienes ${reminderCount} recordatorios de clientes.`);
       }
     } catch (_error) {
       renderMetrics(fallbackDashboard.metrics, fallbackDashboard.currency);
       renderUpcoming(fallbackDashboard.upcomingVisits);
       renderInventory(fallbackDashboard.lowStockItems);
       renderActivity(fallbackDashboard.recentActivity);
+      renderReminderAlerts([
+        { title: 'Juan Pérez debe un corte', meta: 'Está atrasado', type: 'danger', icon: 'fa-solid fa-triangle-exclamation' },
+        { title: 'Carlos Rodríguez está próximo a cortarse', meta: 'Falta 2 días', type: 'warning', icon: 'fa-regular fa-bell' }
+      ]);
       showToast('Ejecutando con datos de respaldo hasta que el backend responda.');
     }
   }
@@ -442,6 +583,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   loadDashboard();
+  loadNotifications();
   loadClientsPage();
   loadInventoryPage();
   loadServicesPage();

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Visitas - Onder</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="Logo NEGRO.png" type="image/png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body>
+    <main class="main-content">
+        <header class="topbar">
+            <div>
+                <h1>Visitas</h1>
+                <div class="meta">Agenda y seguimiento de cortes</div>
+            </div>
+            <div class="actions">
+                <button class="btn primary" id="btnAddVisit">
+                    <i class="fa-solid fa-plus"></i> Nueva Visita
+                </button>
+                <span class="badge"><i class="fa-solid fa-calendar-check"></i> Total: <strong id="visitsCount">0</strong></span>
+            </div>
+        </header>
+
+        <div style="margin-bottom:20px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+            <div style="flex:1;min-width:200px;">
+                <input type="text" id="searchVisit" placeholder="Buscar por cliente, servicio o estado..." style="width:100%;padding:12px 16px;border-radius:12px;background:var(--panel-dark);border:1px solid rgba(255,255,255,0.06);color:var(--text);">
+            </div>
+            <div style="min-width:180px;">
+                <select id="statusFilter" style="width:100%;padding:12px 16px;border-radius:12px;background:var(--panel-dark);border:1px solid rgba(255,255,255,0.06);color:var(--text);">
+                    <option value="">Todos los estados</option>
+                    <option value="programado">Programado</option>
+                    <option value="completado">Completado</option>
+                    <option value="cancelado">Cancelado</option>
+                </select>
+            </div>
+            <div style="min-width:180px;">
+                <input type="date" id="dateFilter" style="width:100%;padding:12px 16px;border-radius:12px;background:var(--panel-dark);border:1px solid rgba(255,255,255,0.06);color:var(--text);">
+            </div>
+            <button class="btn ghost" id="btnClearFilters"><i class="fa-solid fa-times"></i> Limpiar</button>
+        </div>
+
+        <section class="panel">
+            <div class="section-lead">
+                <h2>Agenda de citas</h2>
+                <p>Seguimiento de visitas programadas y completadas.</p>
+            </div>
+
+            <div style="overflow:auto;margin-top:16px;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Servicio</th>
+                            <th>Barbero</th>
+                            <th>Fecha</th>
+                            <th>Método</th>
+                            <th>Estado</th>
+                            <th>Monto</th>
+                            <th style="text-align:center;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="visitsTableBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <footer class="main-footer">© 2024 Onder Barbershop. Todos los derechos reservados.</footer>
+    </main>
+
+    <div id="visitModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Nueva Visita</h2>
+                <button class="modal-close" id="closeModal">&times;</button>
+            </div>
+            <form id="visitForm">
+                <input type="hidden" id="visitId" value="">
+
+                <label for="client_id">Cliente *</label>
+                <select id="client_id" required>
+                    <option value="">Selecciona un cliente</option>
+                </select>
+
+                <label for="service_id">Servicio *</label>
+                <select id="service_id" required>
+                    <option value="">Selecciona un servicio</option>
+                </select>
+
+                <label for="barber_id">Barbero</label>
+                <select id="barber_id">
+                    <option value="">Selecciona un barbero</option>
+                </select>
+
+                <label for="payment_method_id">Método de pago</label>
+                <select id="payment_method_id">
+                    <option value="">Selecciona un método</option>
+                </select>
+
+                <label for="next_visit_date">Fecha de visita *</label>
+                <input type="date" id="next_visit_date" required>
+
+                <label for="amount">Monto</label>
+                <input type="number" id="amount" step="0.01" min="0" placeholder="0.00">
+
+                <label for="status">Estado</label>
+                <select id="status">
+                    <option value="programado">Programado</option>
+                    <option value="completado">Completado</option>
+                    <option value="cancelado">Cancelado</option>
+                </select>
+
+                <label for="notes">Notas</label>
+                <textarea id="notes" placeholder="Observaciones de la visita" style="width:100%;padding:12px 14px;border-radius:10px;background:var(--bg-dark);border:1px solid rgba(255,255,255,0.06);color:var(--text);min-height:80px;resize:vertical;"></textarea>
+
+                <div style="display:flex;gap:12px;margin-top:20px;justify-content:flex-end;">
+                    <button type="button" class="btn ghost" id="cancelModal">Cancelar</button>
+                    <button type="submit" class="btn primary" id="saveVisit">
+                        <i class="fa-solid fa-save"></i> Guardar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="deleteModal" class="modal">
+        <div class="modal-content" style="max-width:420px;">
+            <div class="modal-header">
+                <h2>Confirmar eliminación</h2>
+                <button class="modal-close" id="closeDeleteModal">&times;</button>
+            </div>
+            <p style="margin:20px 0;">¿Estás seguro de eliminar esta visita para <strong id="deleteVisitName"></strong>?</p>
+            <p style="color:var(--muted);font-size:0.9rem;">Esta acción no se puede deshacer.</p>
+            <div style="display:flex;gap:12px;margin-top:20px;justify-content:flex-end;">
+                <button type="button" class="btn ghost" id="cancelDelete">Cancelar</button>
+                <button type="button" class="btn primary" id="confirmDelete" style="background:var(--accent-red);">
+                    <i class="fa-solid fa-trash"></i> Eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="sidebar.js" defer></script>
+    <script src="visits.js" defer></script>
+</body>
+</html>

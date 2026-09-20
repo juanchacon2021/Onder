@@ -4,6 +4,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const tbody = document.getElementById('clientsTableBody');
     const clientsCount = document.getElementById('clientsCount');
     const searchInput = document.getElementById('searchClient');
+    const getAuthHeaders = () => {
+        const token = localStorage.getItem('onder_token') || sessionStorage.getItem('onder_token');
+        return token ? { Authorization: `Bearer ${token}` } : {};
+    };
     const btnClearSearch = document.getElementById('btnClearSearch');
     const btnAddClient = document.getElementById('btnAddClient');
     
@@ -11,6 +15,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const modalTitle = document.getElementById('modalTitle');
     const clientForm = document.getElementById('clientForm');
     const clientId = document.getElementById('clientId');
+    const phonePrefix = document.getElementById('phone_prefix');
+    const phoneNumber = document.getElementById('phone_number');
     const closeModal = document.getElementById('closeModal');
     const cancelModal = document.getElementById('cancelModal');
     const saveClientBtn = document.getElementById('saveClient');
@@ -21,6 +27,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const cancelDelete = document.getElementById('cancelDelete');
     const confirmDelete = document.getElementById('confirmDelete');
     const saveClientText = saveClientBtn ? saveClientBtn.querySelector('.save-text') : null;
+    const whatsappModal = document.getElementById('whatsappModal');
+    const whatsappForm = document.getElementById('whatsappForm');
+    const whatsappPhone = document.getElementById('whatsappPhone');
+    const whatsappMessage = document.getElementById('whatsappMessage');
+    const whatsappClientId = document.getElementById('whatsappClientId');
+    const closeWhatsappModal = document.getElementById('closeWhatsappModal');
+    const cancelWhatsappModal = document.getElementById('cancelWhatsappModal');
+    const sendWhatsappBtn = document.getElementById('sendWhatsappBtn');
     
     let currentDeleteId = null;
     let allClients = [];
@@ -31,7 +45,7 @@ document.addEventListener('DOMContentLoaded', function() {
     async function fetchClients(search = '') {
         try {
             const url = search ? `/api/clients?search=${encodeURIComponent(search)}` : '/api/clients';
-            const response = await fetch(url);
+            const response = await fetch(url, { headers: getAuthHeaders() });
             if (!response.ok) throw new Error('Error al cargar clientes');
             const data = await response.json();
             allClients = data;
@@ -74,22 +88,37 @@ document.addEventListener('DOMContentLoaded', function() {
                 <td>${formatDate(client.last_visit)}</td>
                 <td>${formatDate(client.next_visit)}</td>
                 <td style="text-align:center;">
-                    <button class="btn-edit" data-id="${client.id}" title="Editar">
+                    <button type="button" class="btn-whatsapp" data-whatsapp-id="${client.id}" title="Enviar WhatsApp">
+                        <i class="fa-brands fa-whatsapp"></i>
+                    </button>
+                    <button type="button" class="btn-edit" data-id="${client.id}" title="Editar">
                         <i class="fa-solid fa-pen"></i>
                     </button>
-                    <button class="btn-delete" data-id="${client.id}" data-name="${client.full_name}" title="Eliminar">
+                    <button type="button" class="btn-delete" data-id="${client.id}" data-name="${client.full_name}" title="Eliminar">
                         <i class="fa-solid fa-trash"></i>
                     </button>
                 </td>
             </tr>
         `).join('');
 
-        document.querySelectorAll('.btn-edit').forEach(btn => {
-            btn.addEventListener('click', () => editClient(btn.dataset.id));
-        });
-        document.querySelectorAll('.btn-delete').forEach(btn => {
-            btn.addEventListener('click', () => openDeleteModal(btn.dataset.id, btn.dataset.name));
-        });
+        tbody.onclick = (event) => {
+            const editButton = event.target.closest('.btn-edit');
+            if (editButton) {
+                editClient(editButton.dataset.id);
+                return;
+            }
+
+            const deleteButton = event.target.closest('.btn-delete');
+            if (deleteButton) {
+                openDeleteModal(deleteButton.dataset.id, deleteButton.dataset.name);
+                return;
+            }
+
+            const whatsappButton = event.target.closest('.btn-whatsapp');
+            if (whatsappButton) {
+                openWhatsAppModal(whatsappButton.dataset.whatsappId);
+            }
+        };
     }
 
     function setSaveButtonLoading(loading, label = 'Guardar') {
@@ -114,7 +143,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const response = await fetch('/api/clients', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...getAuthHeaders()
+                },
                 body: JSON.stringify(data)
             });
 
@@ -142,24 +174,17 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    async function editClient(id) {
+    function editClient(id) {
         try {
-            const client = allClients.find(c => c.id === id);
+            const client = allClients.find(c => String(c.id) === String(id));
             if (!client) {
                 showToast('Cliente no encontrado', 'error');
                 return;
             }
 
-            modalTitle.textContent = 'Editar Cliente';
-            clientId.value = client.id;
-            document.getElementById('full_name').value = client.full_name || '';
-            document.getElementById('phone').value = client.phone || '';
-            document.getElementById('instagram').value = client.instagram || '';
-            document.getElementById('favorite_style').value = client.favorite_style || '';
-            document.getElementById('last_visit').value = client.last_visit ? client.last_visit.split('T')[0] : '';
-            document.getElementById('next_visit').value = client.next_visit ? client.next_visit.split('T')[0] : '';
-            modal.style.display = 'flex';
-            saveClientBtn.textContent = 'Actualizar';
+            // openModal() ya rellena el formulario, pone el título correcto
+            // y agrega la clase .is-open que hace visible el modal.
+            openModal(client);
         } catch (error) {
             console.error('Error:', error);
             showToast('Error al cargar el cliente', 'error');
@@ -169,7 +194,8 @@ document.addEventListener('DOMContentLoaded', function() {
     async function deleteClient(id) {
         try {
             const response = await fetch(`/api/clients/${id}`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                headers: getAuthHeaders()
             });
             
             const responseText = await response.text();
@@ -195,6 +221,54 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // ===== UTILIDADES DE TELÉFONO (VENEZUELA) =====
+
+    const VE_PREFIXES = ['0412', '0414', '0416', '0422', '0424', '0426'];
+    const VE_COUNTRY_CODE = '58';
+
+    // Convierte cualquier formato guardado a { prefix, number }
+    function splitPhone(raw) {
+        let digits = String(raw || '').replace(/\D/g, '');
+
+        // Quita el código de país si viene en formato internacional (58...)
+        if (digits.startsWith(VE_COUNTRY_CODE) && digits.length > 10) {
+            digits = digits.slice(VE_COUNTRY_CODE.length);
+        }
+        // Normaliza a formato nacional con 0 inicial
+        if (digits.length === 10 && !digits.startsWith('0')) {
+            digits = '0' + digits;
+        }
+
+        const prefix = digits.slice(0, 4);
+        return {
+            prefix: VE_PREFIXES.includes(prefix) ? prefix : VE_PREFIXES[0],
+            number: VE_PREFIXES.includes(prefix) ? digits.slice(4, 11) : digits.slice(-7)
+        };
+    }
+
+    function composePhone(prefix, number) {
+        return `${prefix} ${String(number).replace(/\D/g, '')}`.trim();
+    }
+
+    // 04121234567 -> 584121234567 (formato que exige wa.me)
+    function toInternational(raw) {
+        let digits = String(raw || '').replace(/\D/g, '');
+        if (digits.startsWith(VE_COUNTRY_CODE) && digits.length >= 12) return digits;
+        if (digits.startsWith('0')) digits = digits.slice(1);
+        return VE_COUNTRY_CODE + digits;
+    }
+
+    function setPhoneFields(raw) {
+        if (!phonePrefix || !phoneNumber) return;
+        const { prefix, number } = splitPhone(raw);
+        phonePrefix.value = prefix;
+        phoneNumber.value = number;
+    }
+
+    phoneNumber?.addEventListener('input', function() {
+        this.value = this.value.replace(/\D/g, '').slice(0, 7);
+    });
+
     // ===== FUNCIONES DE UTILIDAD =====
 
     function formatDate(dateString) {
@@ -208,6 +282,28 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         } catch {
             return 'Sin fecha';
+        }
+    }
+
+    function addDaysToDate(dateString, days) {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        if (Number.isNaN(date.getTime())) return '';
+        date.setDate(date.getDate() + days);
+        return date.toISOString().slice(0, 10);
+    }
+
+    function syncNextVisitFromLastVisit() {
+        const lastVisit = document.getElementById('last_visit').value;
+        const nextVisitInput = document.getElementById('next_visit');
+        const currentValue = nextVisitInput.value;
+
+        if (!lastVisit) {
+            return;
+        }
+
+        if (!currentValue || currentValue === addDaysToDate(lastVisit, 15)) {
+            nextVisitInput.value = addDaysToDate(lastVisit, 15);
         }
     }
 
@@ -253,7 +349,7 @@ document.addEventListener('DOMContentLoaded', function() {
             modalTitle.textContent = 'Editar Cliente';
             clientId.value = clientData.id;
             document.getElementById('full_name').value = clientData.full_name || '';
-            document.getElementById('phone').value = clientData.phone || '';
+            setPhoneFields(clientData.phone);
             document.getElementById('instagram').value = clientData.instagram || '';
             document.getElementById('favorite_style').value = clientData.favorite_style || '';
             document.getElementById('last_visit').value = clientData.last_visit ? clientData.last_visit.split('T')[0] : '';
@@ -264,6 +360,7 @@ document.addEventListener('DOMContentLoaded', function() {
             modalTitle.textContent = 'Nuevo Cliente';
             clientId.value = '';
             clientForm.reset();
+            setPhoneFields('');
             saveClientBtn.dataset.defaultLabel = 'Guardar';
             setSaveButtonLoading(false, 'Guardar');
         }
@@ -279,13 +376,73 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function openDeleteModal(id, name) {
         currentDeleteId = id;
-        deleteClientName.textContent = name;
+        deleteClientName.textContent = name || 'este cliente';
         deleteModal.style.display = 'flex';
+        deleteModal.classList.add('is-open');
     }
 
     function closeDeleteModalHandler() {
+        deleteModal.classList.remove('is-open');
         deleteModal.style.display = 'none';
         currentDeleteId = null;
+    }
+
+    function openWhatsAppModal(clientIdValue) {
+        const client = allClients.find(item => String(item.id) === String(clientIdValue));
+        if (!client) return;
+
+        whatsappClientId.value = client.id;
+        whatsappPhone.value = client.phone || '';
+        whatsappMessage.value = `Hola ${client.full_name || 'cliente'}, te recordamos que tu próxima cita está programada. Gracias por elegir Onder Barbershop.`;
+        whatsappModal.style.display = 'flex';
+        whatsappModal.classList.add('is-open');
+    }
+
+    function closeWhatsAppModalHandler() {
+        whatsappModal.classList.remove('is-open');
+        whatsappModal.style.display = 'none';
+        whatsappForm.reset();
+    }
+
+    function sendWhatsAppMessage(event) {
+        event.preventDefault();
+        const phone = whatsappPhone.value.trim();
+        const message = whatsappMessage.value.trim();
+
+        if (!phone || !message) {
+            showToast('Completa el número y el mensaje', 'error');
+            return;
+        }
+
+        const destination = toInternational(phone);
+        if (destination.length < 12) {
+            showToast('El número no es válido. Usa el formato 0412 1234567', 'error');
+            whatsappPhone.focus();
+            return;
+        }
+
+        // window.open debe ejecutarse de forma síncrona dentro del handler,
+        // de lo contrario el navegador lo bloquea como popup.
+        const url = `https://wa.me/${destination}?text=${encodeURIComponent(message)}`;
+        const opened = window.open(url, '_blank', 'noopener');
+
+        if (!opened) {
+            showToast('El navegador bloqueó la ventana. Permite popups para este sitio.', 'error');
+            return;
+        }
+
+        showToast('Abriendo WhatsApp…', 'success');
+        closeWhatsAppModalHandler();
+
+        // Registro opcional en el backend: si falla, el mensaje igual se abrió.
+        fetch('/api/notifications/whatsapp', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...getAuthHeaders()
+            },
+            body: JSON.stringify({ to: destination, message, clientId: whatsappClientId.value || null })
+        }).catch((error) => console.warn('No se pudo registrar el envío:', error));
     }
 
     // ===== EVENT LISTENERS =====
@@ -305,10 +462,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
     btnAddClient.addEventListener('click', () => openModal());
 
+    document.getElementById('last_visit').addEventListener('change', syncNextVisitFromLastVisit);
+    document.getElementById('next_visit').addEventListener('change', function() {
+        if (!this.value && document.getElementById('last_visit').value) {
+            this.value = addDaysToDate(document.getElementById('last_visit').value, 15);
+        }
+    });
+
     closeModal.addEventListener('click', closeModalHandler);
     cancelModal.addEventListener('click', closeModalHandler);
     closeDeleteModal.addEventListener('click', closeDeleteModalHandler);
     cancelDelete.addEventListener('click', closeDeleteModalHandler);
+    closeWhatsappModal.addEventListener('click', closeWhatsAppModalHandler);
+    cancelWhatsappModal.addEventListener('click', closeWhatsAppModalHandler);
 
     modal.addEventListener('click', function(e) {
         if (e.target === this) closeModalHandler();
@@ -316,12 +482,17 @@ document.addEventListener('DOMContentLoaded', function() {
     deleteModal.addEventListener('click', function(e) {
         if (e.target === this) closeDeleteModalHandler();
     });
+    whatsappModal.addEventListener('click', function(e) {
+        if (e.target === this) closeWhatsAppModalHandler();
+    });
 
     confirmDelete.addEventListener('click', async function() {
         if (currentDeleteId) {
             await deleteClient(currentDeleteId);
         }
     });
+
+    whatsappForm.addEventListener('submit', sendWhatsAppMessage);
 
     clientForm.addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -331,11 +502,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         const lastVisit = document.getElementById('last_visit').value;
-        const nextVisit = document.getElementById('next_visit').value;
-        
+        let nextVisit = document.getElementById('next_visit').value;
+
+        if (lastVisit && !nextVisit) {
+            nextVisit = addDaysToDate(lastVisit, 15);
+            document.getElementById('next_visit').value = nextVisit;
+        }
+
+        const rawNumber = phoneNumber.value.replace(/\D/g, '');
+
         const data = {
             full_name: document.getElementById('full_name').value.trim(),
-            phone: document.getElementById('phone').value.trim(),
+            phone: rawNumber ? composePhone(phonePrefix.value, rawNumber) : '',
             instagram: document.getElementById('instagram').value.trim() || null,
             favorite_style: document.getElementById('favorite_style').value.trim() || null,
             last_visit: lastVisit || null,
@@ -346,8 +524,14 @@ document.addEventListener('DOMContentLoaded', function() {
             showToast('El nombre es obligatorio', 'error');
             return;
         }
-        if (!data.phone) {
+        if (!rawNumber) {
             showToast('El teléfono es obligatorio', 'error');
+            phoneNumber.focus();
+            return;
+        }
+        if (rawNumber.length !== 7) {
+            showToast('El número debe tener 7 dígitos después del prefijo', 'error');
+            phoneNumber.focus();
             return;
         }
 
@@ -360,7 +544,10 @@ document.addEventListener('DOMContentLoaded', function() {
             if (id) {
                 const response = await fetch(`/api/clients/${id}`, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...getAuthHeaders()
+                    },
                     body: JSON.stringify(data)
                 });
                 

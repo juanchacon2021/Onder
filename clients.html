@@ -69,7 +69,8 @@
             font-weight: 500;
         }
         .modal-content input,
-        .modal-content select {
+        .modal-content select,
+        .modal-content textarea {
             width: 100%;
             padding: 12px 14px;
             border-radius: 10px;
@@ -78,10 +79,33 @@
             color: var(--text);
             font-size: 0.95rem;
         }
+        .modal-content textarea {
+            min-height: 110px;
+            resize: vertical;
+            font-family: inherit;
+        }
         .modal-content input:focus,
-        .modal-content select:focus {
+        .modal-content select:focus,
+        .modal-content textarea:focus {
             outline: none;
             border-color: var(--accent-blue);
+        }
+        .phone-field {
+            display: flex;
+            gap: 10px;
+        }
+        .phone-field select {
+            flex: 0 0 110px;
+            width: 110px;
+        }
+        .phone-field input {
+            flex: 1;
+            letter-spacing: 0.04em;
+        }
+        .field-hint {
+            margin-top: 6px;
+            color: var(--muted);
+            font-size: 0.8rem;
         }
         .client-row {
             animation: clientRowIn 0.28s ease both;
@@ -229,8 +253,19 @@
                 <label for="full_name">Nombre completo *</label>
                 <input type="text" id="full_name" placeholder="Ej: Juan Pérez" required>
 
-                <label for="phone">Teléfono *</label>
-                <input type="text" id="phone" placeholder="+57 300 123 4567" required>
+                <label for="phone_number">Teléfono *</label>
+                <div class="phone-field">
+                    <select id="phone_prefix" aria-label="Prefijo telefónico">
+                        <option value="0412">0412</option>
+                        <option value="0414">0414</option>
+                        <option value="0416">0416</option>
+                        <option value="0422">0422</option>
+                        <option value="0424">0424</option>
+                        <option value="0426">0426</option>
+                    </select>
+                    <input type="tel" id="phone_number" inputmode="numeric" maxlength="7" placeholder="1234567" required>
+                </div>
+                <div class="field-hint">Solo los 7 dígitos después del prefijo.</div>
 
                 <label for="instagram">Instagram</label>
                 <input type="text" id="instagram" placeholder="@usuario">
@@ -250,6 +285,31 @@
                         <i class="fa-solid fa-save save-icon"></i>
                         <i class="fa-solid fa-spinner fa-spin save-spinner" aria-hidden="true"></i>
                         <span class="save-text">Guardar</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="whatsappModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Enviar WhatsApp</h2>
+                <button class="modal-close" id="closeWhatsappModal" type="button">&times;</button>
+            </div>
+            <form id="whatsappForm">
+                <input type="hidden" id="whatsappClientId">
+                <label for="whatsappPhone">Número</label>
+                <input type="text" id="whatsappPhone" placeholder="0412 1234567" required>
+                <div class="field-hint">Se abrirá WhatsApp con el mensaje listo para enviar.</div>
+
+                <label for="whatsappMessage">Mensaje</label>
+                <textarea id="whatsappMessage" placeholder="Hola, te recordamos tu cita..." required></textarea>
+
+                <div style="display:flex;gap:12px;margin-top:20px;justify-content:flex-end;">
+                    <button type="button" class="btn ghost" id="cancelWhatsappModal">Cancelar</button>
+                    <button type="submit" class="btn primary" id="sendWhatsappBtn">
+                        <i class="fa-brands fa-whatsapp"></i> Enviar
                     </button>
                 </div>
             </form>

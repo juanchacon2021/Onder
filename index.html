@@ -19,7 +19,6 @@
                 <div class="meta">Bienvenido de nuevo, Administrador</div>
             </div>
             <div class="actions">
-                <span class="badge"><i class="fa-regular fa-bell"></i> 3</span>
                 <span class="badge-light" style="background:transparent;color:var(--muted);padding:4px 12px;"><i class="fa-solid fa-user-circle"></i> Admin</span>
             </div>
         </header>
@@ -69,7 +68,7 @@
             </div>
 
             <!-- Card 3: Servicios más populares (MEJORADO) -->
-            <div class="card chart">
+            <!-- <div class="card chart">
                 <h3><i class="fa-solid fa-chart-pie" style="color:var(--accent-yellow);margin-right:8px;"></i> Servicios más populares</h3>
                 <div class="donut-container">
                     <div class="donut">
@@ -103,20 +102,20 @@
                         </li>
                     </ul>
                 </div>
-            </div>
+            </div> -->
 
             <!-- Card 4: Actividad reciente -->
-            <div class="card activity">
+            <!-- <div class="card activity">
                 <h3><i class="fa-regular fa-clock" style="color:var(--accent-green);margin-right:8px;"></i> Actividad reciente</h3>
                 <ul id="activityList">
                     <li><span class="icon green"><i class="fa-solid fa-circle"></i></span><div><strong>Nuevo cliente registrado</strong><small>Luis Martínez • 10:30 AM</small></div></li>
                     <li><span class="icon blue"><i class="fa-solid fa-circle"></i></span><div><strong>Visita registrada</strong><small>Carlos Rodríguez • 10:15 AM</small></div></li>
                     <li><span class="icon orange"><i class="fa-solid fa-circle"></i></span><div><strong>Pago recibido</strong><small>$15.00 • Efectivo • 09:45 AM</small></div></li>
                 </ul>
-            </div>
+            </div> -->
 
             <!-- Card 5: Ventas del día -->
-            <div class="card sales">
+            <!-- <div class="card sales">
                 <h3><i class="fa-solid fa-dollar-sign" style="color:var(--accent-purple);margin-right:8px;"></i> Ventas del día</h3>
                 <div class="sales-figure" id="salesFigure">$245.00 <small style="color:var(--muted);display:block">+8% vs ayer</small></div>
                 <div class="sparkline">
@@ -130,15 +129,13 @@
                         </defs>
                     </svg>
                 </div>
-            </div>
+            </div> -->
 
             <!-- Card 6: Recordatorios -->
             <div class="card reminders">
                 <h3><i class="fa-regular fa-bell" style="color:var(--accent-pink);margin-right:8px;"></i> Recordatorios</h3>
-                <ul>
-                    <li><div class="rem-icon"><i class="fa-regular fa-calendar"></i></div><div><strong>24 clientes tienen corte programado</strong><small>en los próximos 7 días</small></div></li>
-                    <li><div class="rem-icon"><i class="fa-solid fa-triangle-exclamation"></i></div><div><strong>3 productos en bajo stock</strong><small>revisa el inventario</small></div></li>
-                    <li><div class="rem-icon"><i class="fa-brands fa-whatsapp"></i></div><div><strong>Activar recordatorios por WhatsApp</strong><small>configuración</small></div></li>
+                <ul id="notificationsList">
+                    <li class="notification-loading"><div class="rem-icon"><i class="fa-solid fa-spinner fa-spin"></i></div><div><strong>Cargando notificaciones…</strong><small>Solicitando información del backend</small></div></li>
                 </ul>
             </div>
         </section>

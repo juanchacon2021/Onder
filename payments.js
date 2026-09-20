@@ -4,6 +4,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const tbody = document.getElementById('paymentsTableBody');
   const paymentsCount = document.getElementById('paymentsCount');
   const searchInput = document.getElementById('searchPayment');
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('onder_token') || sessionStorage.getItem('onder_token');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
   const filterMethod = document.getElementById('filterMethod');
   const btnClearFilters = document.getElementById('btnClearFilters');
   const btnAddPayment = document.getElementById('btnAddPayment');
@@ -229,7 +233,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const response = await fetch(url, {
       method,
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeaders()
+      },
       body: JSON.stringify(payload)
     });
 
@@ -258,7 +265,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function deletePayment(id) {
-    const response = await fetch(`/api/payments/${id}`, { method: 'DELETE' });
+    const response = await fetch(`/api/payments/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
     const responseText = await response.text();
 
     if (!response.ok) {

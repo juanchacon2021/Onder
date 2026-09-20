@@ -4,6 +4,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const tbody = document.getElementById('usersTableBody');
   const usersCount = document.getElementById('usersCount');
   const searchInput = document.getElementById('searchUser');
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('onder_token') || sessionStorage.getItem('onder_token');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
   const btnClearSearch = document.getElementById('btnClearSearch');
   const btnAddUser = document.getElementById('btnAddUser');
 
@@ -168,7 +172,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function loadReferenceData() {
-    const response = await fetch('/api/roles');
+    const response = await fetch('/api/roles', { headers: getAuthHeaders() });
     if (!response.ok) throw new Error('No se pudieron cargar los roles');
     allRoles = await response.json();
     renderRoleOptions();
@@ -178,7 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const params = new URLSearchParams();
       if (searchInput?.value.trim()) params.set('search', searchInput.value.trim());
-      const response = await fetch(`/api/users${params.toString() ? `?${params.toString()}` : ''}`);
+      const response = await fetch(`/api/users${params.toString() ? `?${params.toString()}` : ''}`, { headers: getAuthHeaders() });
       if (!response.ok) throw new Error('Error al cargar usuarios');
       allUsers = await response.json();
       renderUsers(allUsers);
@@ -197,7 +201,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const response = await fetch(url, {
       method,
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeaders()
+      },
       body: JSON.stringify(payload)
     });
 
@@ -227,7 +234,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function deleteUser(id) {
-    const response = await fetch(`/api/users/${id}`, { method: 'DELETE' });
+    const response = await fetch(`/api/users/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
     const responseText = await response.text();
 
     if (!response.ok) {

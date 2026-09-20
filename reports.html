@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Reportes - Onder</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="Logo NEGRO.png" type="image/png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body>
+    <main class="main-content">
+        <header class="topbar">
+            <div>
+                <h1>Reportes</h1>
+                <div class="meta">Indicadores del negocio</div>
+            </div>
+            <div class="actions">
+                <span class="badge"><i class="fa-solid fa-chart-column"></i> Resumen</span>
+            </div>
+        </header>
+
+        <section class="overview" id="summaryCards">
+            <div class="stat">
+                <div class="stat-title">Clientes</div>
+                <div class="stat-value" id="totalClients">0</div>
+                <div class="stat-foot">Total activos</div>
+            </div>
+            <div class="stat">
+                <div class="stat-title">Ingresos</div>
+                <div class="stat-value" id="totalRevenue">$0.00</div>
+                <div class="stat-foot">Ventas registradas</div>
+            </div>
+            <div class="stat">
+                <div class="stat-title">Ticket promedio</div>
+                <div class="stat-value" id="avgTicket">$0.00</div>
+                <div class="stat-foot">Promedio por pago</div>
+            </div>
+            <div class="stat">
+                <div class="stat-title">Visitas completadas</div>
+                <div class="stat-value" id="completedVisits">0</div>
+                <div class="stat-foot">Total del período</div>
+            </div>
+        </section>
+
+        <section class="grid" aria-live="polite">
+            <div class="card">
+                <h3><i class="fa-solid fa-boxes" style="color:var(--accent-blue);margin-right:8px;"></i> Inventario</h3>
+                <ul id="lowStockList" style="list-style:none;display:flex;flex-direction:column;gap:12px;">
+                    <li style="color:var(--muted);">Cargando información...</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h3><i class="fa-solid fa-calendar-check" style="color:var(--accent-green);margin-right:8px;"></i> Visitas</h3>
+                <ul id="visitSummaryList" style="list-style:none;display:flex;flex-direction:column;gap:12px;">
+                    <li style="color:var(--muted);">Cargando información...</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h3><i class="fa-solid fa-money-bill-wave" style="color:var(--accent-yellow);margin-right:8px;"></i> Resumen financiero</h3>
+                <div class="sales-figure" id="summaryRevenue">$0.00</div>
+                <div class="sparkline">
+                    <svg viewBox="0 0 240 60" preserveAspectRatio="none">
+                        <polyline fill="none" stroke="url(#sparklineGrad)" stroke-width="3" points="0,50 30,46 60,40 90,34 120,30 150,28 180,22 210,16 240,12"/>
+                        <defs>
+                            <linearGradient id="sparklineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" style="stop-color:#c4121b;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#0b8bd1;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3><i class="fa-solid fa-file-lines" style="color:var(--accent-red);margin-right:8px;"></i> Datos clave</h3>
+                <ul id="keyMetricsList" style="list-style:none;display:flex;flex-direction:column;gap:12px;">
+                    <li style="color:var(--muted);">Cargando información...</li>
+                </ul>
+            </div>
+        </section>
+
+        <footer class="main-footer">© 2024 Onder Barbershop. Todos los derechos reservados.</footer>
+    </main>
+
+    <script src="sidebar.js" defer></script>
+    <script src="reports.js" defer></script>
+</body>
+</html>

@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { createClient } from '@supabase/supabase-js';
+import crypto from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -11,20 +12,25 @@ dotenv.config();
 
 const app = express();
 const port = Number.parseInt(process.env.PORT || '3000', 10);
-const jwtSecret = process.env.JWT_SECRET || 'change-me';
+const jwtSecret = process.env.JWT_SECRET || crypto.randomBytes(32).toString('hex');
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000,http://localhost:3001')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const dataMode = (process.env.DATA_MODE || 'auto').toLowerCase();
-const allowMockFallback = dataMode !== 'supabase';
+const allowMockFallback = dataMode !== 'supabase' || String(process.env.ALLOW_MOCK_FALLBACK || '').toLowerCase() === 'true';
+const useSupabase = dataMode === 'supabase' && Boolean(supabaseUrl && supabaseServiceRoleKey);
 
 if (!supabaseUrl || !supabaseServiceRoleKey) {
   console.warn('⚠️  Faltan SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY en el archivo .env');
 }
 
-const supabase = supabaseUrl && supabaseServiceRoleKey
+const supabase = useSupabase
   ? createClient(supabaseUrl, supabaseServiceRoleKey, {
       auth: { persistSession: false, autoRefreshToken: false }
     })
@@ -34,6 +40,16 @@ const nowIso = () => new Date().toISOString();
 const daysFromNow = (days) => {
   const date = new Date();
   date.setDate(date.getDate() + days);
+  return date.toISOString();
+};
+const nextVisitFromLastVisit = (lastVisit, nextVisit = null) => {
+  if (nextVisit) return nextVisit;
+  if (!lastVisit) return null;
+
+  const date = new Date(lastVisit);
+  if (Number.isNaN(date.getTime())) return null;
+
+  date.setDate(date.getDate() + 15);
   return date.toISOString();
 };
 
@@ -288,9 +304,48 @@ function insertMockRow(table, payload) {
   return cloneRow(row);
 }
 
-app.use(cors());
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error('Origen no permitido por CORS'));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json({ limit: '2mb' }));
 app.use(express.static(__dirname));
+
+const requireAuth = (req, res, next) => {
+  const header = req.headers.authorization || '';
+  const token = header.startsWith('Bearer ') ? header.slice(7) : '';
+
+  if (!token) {
+    return res.status(401).json({ error: 'No autenticado.' });
+  }
+
+  try {
+    req.user = jwt.verify(token, jwtSecret);
+    return next();
+  } catch (_error) {
+    return res.status(401).json({ error: 'Token inválido o expirado.' });
+  }
+};
+
+app.use('/api', (req, res, next) => {
+  if (req.path === '/health' || req.path === '/auth/login') {
+    return next();
+  }
+
+  return requireAuth(req, res, next);
+});
 
 const isSupabaseReady = () => Boolean(supabase);
 
@@ -453,6 +508,41 @@ app.get('/api/settings', async (_req, res) => {
     res.json(settings[0] || null);
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/settings', async (req, res) => {
+  if (!requireSupabase(res)) return;
+  try {
+    const payload = req.body || {};
+    const settings = await fetchRows('settings');
+    const current = settings[0] || { id: 'settings-1' };
+    const next = {
+      ...current,
+      business_name: payload.business_name || current.business_name || 'Onder Barbershop',
+      currency: payload.currency || current.currency || 'USD',
+      updated_at: nowIso()
+    };
+
+    if (isSupabaseReady()) {
+      const { data, error } = await supabase
+        .from('settings')
+        .upsert(next, { onConflict: 'id' })
+        .select()
+        .single();
+      if (error) throw error;
+      return res.json(data);
+    }
+
+    const index = mockStore.settings.findIndex((item) => item.id === current.id);
+    if (index >= 0) {
+      mockStore.settings[index] = { ...mockStore.settings[index], ...next };
+      return res.json(mockStore.settings[index]);
+    }
+    mockStore.settings.unshift(next);
+    res.json(next);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
   }
 });
 
@@ -638,7 +728,7 @@ app.post('/api/clients', async (req, res) => {
     if (payload.instagram) clientData.instagram = payload.instagram.trim();
     if (payload.favorite_style) clientData.favorite_style = payload.favorite_style.trim();
     if (payload.last_visit) clientData.last_visit = payload.last_visit;
-    if (payload.next_visit) clientData.next_visit = payload.next_visit;
+    clientData.next_visit = nextVisitFromLastVisit(payload.last_visit || clientData.last_visit, payload.next_visit || null);
     if (payload.is_active !== undefined) clientData.is_active = payload.is_active;
 
     console.log('📝 Datos a insertar en Supabase:', clientData);
@@ -699,7 +789,7 @@ app.put('/api/clients/:id', async (req, res) => {
       instagram: payload.instagram || null,
       favorite_style: payload.favorite_style || null,
       last_visit: payload.last_visit || null,
-      next_visit: payload.next_visit || null,
+      next_visit: nextVisitFromLastVisit(payload.last_visit || null, payload.next_visit || null),
       is_active: payload.is_active !== false
     };
     
@@ -798,6 +888,43 @@ app.post('/api/inventory', async (req, res) => {
 });
 
 // ===== VISITAS =====
+app.get('/api/visits', async (req, res) => {
+  if (!requireSupabase(res)) return;
+  try {
+    const { search = '', status = '', date = '' } = req.query;
+    const [clients, services, paymentMethods, visits] = await Promise.all([
+      fetchRows('clients'),
+      fetchRows('services'),
+      fetchRows('payment_methods'),
+      fetchRows('visits')
+    ]);
+
+    const clientMap = new Map(clients.map((client) => [client.id, client]));
+    const serviceMap = new Map(services.map((service) => [service.id, service]));
+    const paymentMethodMap = new Map(paymentMethods.map((method) => [method.id, method]));
+
+    const enrichedVisits = visits.map((visit) => ({
+      ...visit,
+      client_name: clientMap.get(visit.client_id)?.full_name || 'Cliente',
+      client_phone: clientMap.get(visit.client_id)?.phone || '',
+      service_name: serviceMap.get(visit.service_id)?.name || 'Servicio',
+      payment_method_name: paymentMethodMap.get(visit.payment_method_id)?.name || 'Sin método'
+    }));
+
+    const filteredVisits = enrichedVisits.filter((visit) => {
+      const text = String(search).trim().toLowerCase();
+      const matchesSearch = !text || [visit.client_name, visit.service_name, visit.payment_method_name, visit.status].join(' ').toLowerCase().includes(text);
+      const matchesStatus = !status || String(visit.status || '').toLowerCase() === String(status).toLowerCase();
+      const matchesDate = !date || (visit.next_visit_date || '').slice(0, 10) === String(date);
+      return matchesSearch && matchesStatus && matchesDate;
+    });
+
+    res.json(filteredVisits);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.get('/api/visits/upcoming', async (req, res) => {
   if (!requireSupabase(res)) return;
   try {
@@ -825,6 +952,96 @@ app.get('/api/visits/upcoming', async (req, res) => {
       }));
 
     res.json(upcomingVisits);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/visits', async (req, res) => {
+  if (!requireSupabase(res)) return;
+  try {
+    const payload = req.body || {};
+
+    if (!payload.client_id) return res.status(400).json({ error: 'El cliente es obligatorio.' });
+    if (!payload.service_id) return res.status(400).json({ error: 'El servicio es obligatorio.' });
+    if (!payload.next_visit_date) return res.status(400).json({ error: 'La fecha de la visita es obligatoria.' });
+
+    const visitData = {
+      client_id: payload.client_id,
+      service_id: payload.service_id,
+      barber_id: payload.barber_id || 'user-2',
+      payment_method_id: payload.payment_method_id || 'payment-method-cash',
+      next_visit_date: payload.next_visit_date,
+      amount: numberValue(payload.amount || 0),
+      status: payload.status || 'programado',
+      notes: payload.notes || null,
+      created_at: nowIso()
+    };
+
+    if (isSupabaseReady()) {
+      try {
+        const { data, error } = await supabase.from('visits').insert([visitData]).select().single();
+        if (error) throw error;
+        return res.status(201).json(data);
+      } catch (error) {
+        if (!allowMockFallback) throw error;
+        console.warn(`Insertando visita en mock: ${error.message}`);
+      }
+    }
+
+    res.status(201).json(insertMockRow('visits', visitData));
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+app.put('/api/visits/:id', async (req, res) => {
+  if (!requireSupabase(res)) return;
+  try {
+    const { id } = req.params;
+    const payload = req.body || {};
+
+    const visitData = {
+      client_id: payload.client_id,
+      service_id: payload.service_id,
+      barber_id: payload.barber_id || 'user-2',
+      payment_method_id: payload.payment_method_id || 'payment-method-cash',
+      next_visit_date: payload.next_visit_date,
+      amount: numberValue(payload.amount || 0),
+      status: payload.status || 'programado',
+      notes: payload.notes || null
+    };
+
+    if (isSupabaseReady()) {
+      const { data, error } = await supabase.from('visits').update(visitData).eq('id', id).select().single();
+      if (error) throw error;
+      return res.json(data);
+    }
+
+    const index = mockStore.visits.findIndex((visit) => visit.id === id);
+    if (index === -1) return res.status(404).json({ error: 'Visita no encontrada' });
+    mockStore.visits[index] = { ...mockStore.visits[index], ...visitData };
+    res.json(mockStore.visits[index]);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+app.delete('/api/visits/:id', async (req, res) => {
+  if (!requireSupabase(res)) return;
+  try {
+    const { id } = req.params;
+
+    if (isSupabaseReady()) {
+      const { error } = await supabase.from('visits').delete().eq('id', id);
+      if (error) throw error;
+      return res.json({ success: true });
+    }
+
+    const index = mockStore.visits.findIndex((item) => item.id === id);
+    if (index === -1) return res.status(404).json({ error: 'Visita no encontrada' });
+    mockStore.visits.splice(index, 1);
+    res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -1019,6 +1236,41 @@ app.get('/api/roles', async (_req, res) => {
   }
 });
 
+app.get('/api/reports/summary', async (_req, res) => {
+  if (!requireSupabase(res)) return;
+  try {
+    const [clients, services, inventory, payments, visits, settings] = await Promise.all([
+      fetchRows('clients'),
+      fetchRows('services'),
+      fetchRows('inventory'),
+      fetchRows('payments'),
+      fetchRows('visits'),
+      fetchRows('settings')
+    ]);
+
+    const totalRevenue = payments.reduce((sum, payment) => sum + numberValue(payment.amount), 0);
+    const avgTicket = payments.length ? totalRevenue / payments.length : 0;
+    const lowStockCount = inventory.filter((item) => numberValue(item.stock) <= numberValue(item.minimum_stock)).length;
+    const completedVisits = visits.filter((visit) => String(visit.status || '').toLowerCase() === 'completado').length;
+
+    res.json({
+      business_name: settings[0]?.business_name || 'Onder Barbershop',
+      currency: settings[0]?.currency || 'USD',
+      metrics: {
+        totalClients: clients.length,
+        totalServices: services.length,
+        totalRevenue,
+        avgTicket,
+        lowStockCount,
+        completedVisits,
+        totalVisits: visits.length
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.get('/api/users', async (req, res) => {
   if (!requireSupabase(res)) return;
   try {
@@ -1181,10 +1433,239 @@ app.delete('/api/users/:id', async (req, res) => {
 });
 
 // ===== NOTIFICACIONES =====
+
+// Alertas automáticas que se recalculan en cada consulta.
+// Se marcan como leídas en memoria (se regeneran si la condición sigue activa
+// pero no vuelven a aparecer hasta reiniciar el servidor o cambiar los datos).
+const dismissedAlerts = new Set();
+
+const UPCOMING_VISIT_DAYS = 3;
+
+function daysUntil(value) {
+  if (!value) return null;
+  const target = new Date(value);
+  if (Number.isNaN(target.getTime())) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  target.setHours(0, 0, 0, 0);
+  return Math.round((target - today) / 86400000);
+}
+
+function describeDays(diff) {
+  if (diff === 0) return 'Es hoy';
+  if (diff === 1) return 'Es mañana';
+  if (diff < 0) return `Hace ${Math.abs(diff)} día${Math.abs(diff) === 1 ? '' : 's'}`;
+  return `Faltan ${diff} días`;
+}
+
+async function buildAutoNotifications() {
+  const [clients, inventory, visits, payments] = await Promise.all([
+    fetchRows('clients'),
+    fetchRows('inventory'),
+    fetchRows('visits'),
+    fetchRows('payments')
+  ]);
+
+  const clientMap = new Map(clients.map((client) => [client.id, client]));
+  const alerts = [];
+
+  // --- 1. Productos con stock bajo ---
+  inventory.forEach((item) => {
+    const stock = Number(item.stock) || 0;
+    const minimum = Number(item.minimum_stock) || 0;
+    if (stock > minimum) return;
+
+    alerts.push({
+      id: `auto-stock-${item.id}`,
+      type: 'stock',
+      severity: stock === 0 ? 'danger' : 'warning',
+      title: stock === 0
+        ? `${item.name} se agotó`
+        : `Stock bajo: ${item.name}`,
+      message: `Quedan ${stock} unidades (mínimo ${minimum}).`,
+      link: 'inventory.html',
+      created_at: nowIso(),
+      is_sent: false
+    });
+  });
+
+  // --- 2. Clientes próximos a venir ---
+  const seenUpcoming = new Set();
+
+  visits.forEach((visit) => {
+    if (String(visit.status || '').toLowerCase() !== 'programado') return;
+    const diff = daysUntil(visit.next_visit_date);
+    if (diff === null || diff < 0 || diff > UPCOMING_VISIT_DAYS) return;
+
+    const client = clientMap.get(visit.client_id);
+    const name = client?.full_name || 'Cliente sin nombre';
+    seenUpcoming.add(visit.client_id);
+
+    alerts.push({
+      id: `auto-visit-${visit.id}`,
+      type: 'visit',
+      severity: diff <= 1 ? 'warning' : 'info',
+      title: `${name} está próximo a cortarse`,
+      message: `${describeDays(diff)} para su cita.`,
+      link: 'visits.html',
+      created_at: nowIso(),
+      is_sent: false
+    });
+  });
+
+  // Clientes con próxima visita agendada en su ficha pero sin visita registrada
+  clients.forEach((client) => {
+    if (seenUpcoming.has(client.id)) return;
+    const diff = daysUntil(client.next_visit);
+    if (diff === null || diff < 0 || diff > UPCOMING_VISIT_DAYS) return;
+
+    alerts.push({
+      id: `auto-client-${client.id}`,
+      type: 'visit',
+      severity: diff <= 1 ? 'warning' : 'info',
+      title: `${client.full_name || 'Cliente'} está próximo a cortarse`,
+      message: `${describeDays(diff)} para su próxima visita.`,
+      link: 'clients.html',
+      created_at: nowIso(),
+      is_sent: false
+    });
+  });
+
+  // --- 3. Clientes que no han pagado ---
+  payments.forEach((payment) => {
+    const status = String(payment.status || '').toLowerCase();
+    if (status !== 'pendiente') return;
+
+    const client = clientMap.get(payment.client_id);
+    alerts.push({
+      id: `auto-payment-${payment.id}`,
+      type: 'payment',
+      severity: 'danger',
+      title: `Pago pendiente de ${client?.full_name || 'un cliente'}`,
+      message: `Monto: ${Number(payment.amount || 0).toFixed(2)} USD.`,
+      link: 'payments.html',
+      created_at: nowIso(),
+      is_sent: false
+    });
+  });
+
+  // Visitas ya completadas que no tienen ningún pago registrado del cliente
+  const paidClients = new Set(
+    payments
+      .filter((payment) => String(payment.status || '').toLowerCase() === 'pagado')
+      .map((payment) => payment.client_id)
+  );
+
+  visits.forEach((visit) => {
+    if (String(visit.status || '').toLowerCase() !== 'completado') return;
+    if (paidClients.has(visit.client_id)) return;
+
+    const client = clientMap.get(visit.client_id);
+    alerts.push({
+      id: `auto-unpaid-${visit.id}`,
+      type: 'payment',
+      severity: 'danger',
+      title: `${client?.full_name || 'Cliente'} no ha pagado su visita`,
+      message: `Visita completada por ${Number(visit.amount || 0).toFixed(2)} USD sin pago registrado.`,
+      link: 'payments.html',
+      created_at: nowIso(),
+      is_sent: false
+    });
+  });
+
+  return alerts.filter((alert) => !dismissedAlerts.has(alert.id));
+}
+
 app.get('/api/notifications', async (_req, res) => {
-  if (!requireSupabase(res)) return;
   try {
-    res.json(await fetchRows('notifications'));
+    const [stored, auto] = await Promise.all([
+      fetchRows('notifications'),
+      buildAutoNotifications().catch((error) => {
+        console.warn('No se pudieron generar las alertas automáticas:', error.message);
+        return [];
+      })
+    ]);
+
+    const severityRank = { danger: 0, warning: 1, info: 2 };
+    auto.sort((a, b) => (severityRank[a.severity] ?? 3) - (severityRank[b.severity] ?? 3));
+
+    res.json([...auto, ...stored]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Endpoint dedicado por si quieres consultar solo las alertas automáticas
+app.get('/api/notifications/alerts', async (_req, res) => {
+  try {
+    res.json(await buildAutoNotifications());
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/notifications', async (req, res) => {
+  try {
+    const payload = req.body || {};
+    const title = String(payload.title || '').trim();
+    if (!title) {
+      return res.status(400).json({ error: 'El título es obligatorio.' });
+    }
+
+    const row = insertMockRow('notifications', {
+      title,
+      is_sent: Boolean(payload.is_sent),
+      created_at: nowIso()
+    });
+
+    res.status(201).json(row);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.patch('/api/notifications/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const index = mockStore.notifications.findIndex((item) => item.id === id);
+    if (index === -1) {
+      return res.status(404).json({ error: 'Notificación no encontrada.' });
+    }
+
+    mockStore.notifications[index] = {
+      ...mockStore.notifications[index],
+      ...req.body,
+      updated_at: nowIso()
+    };
+
+    res.json(mockStore.notifications[index]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/notifications/:id/read', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Las alertas automáticas no existen en la base: se silencian en memoria.
+    if (String(id).startsWith('auto-')) {
+      dismissedAlerts.add(id);
+      return res.json({ id, is_sent: true, auto: true });
+    }
+
+    const index = mockStore.notifications.findIndex((item) => item.id === id);
+    if (index === -1) {
+      return res.status(404).json({ error: 'Notificación no encontrada.' });
+    }
+
+    mockStore.notifications[index] = {
+      ...mockStore.notifications[index],
+      is_sent: true,
+      updated_at: nowIso()
+    };
+
+    res.json(mockStore.notifications[index]);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -1195,13 +1676,14 @@ app.post('/api/auth/login', async (req, res) => {
   if (!requireSupabase(res)) return;
   try {
     const { email, password } = req.body || {};
+    const normalizedEmail = String(email || '').trim().toLowerCase();
 
-    if (!email || !password) {
+    if (!normalizedEmail || !password) {
       return res.status(400).json({ error: 'Email y contraseña son obligatorios.' });
     }
 
     if (allowMockFallback || !isSupabaseReady() || dataMode === 'mock') {
-      const user = mockStore.users.find((item) => item.email.toLowerCase() === String(email).toLowerCase());
+      const user = mockStore.users.find((item) => item.email.toLowerCase() === normalizedEmail);
       if (!user || !user.is_active) {
         return res.status(401).json({ error: 'Credenciales inválidas.' });
       }
@@ -1227,7 +1709,7 @@ app.post('/api/auth/login', async (req, res) => {
     const { data: user, error } = await supabase
       .from('users')
       .select('id, full_name, email, phone, password_hash, role_id, is_active')
-      .eq('email', email)
+      .eq('email', normalizedEmail)
       .maybeSingle();
 
     if (error) throw error;

@@ -4,6 +4,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const tbody = document.getElementById('inventoryTableBody');
     const inventoryCount = document.getElementById('inventoryCount');
     const searchInput = document.getElementById('searchProduct');
+    const getAuthHeaders = () => {
+        const token = localStorage.getItem('onder_token') || sessionStorage.getItem('onder_token');
+        return token ? { Authorization: `Bearer ${token}` } : {};
+    };
     const filterLowStock = document.getElementById('filterLowStock');
     const btnClearFilters = document.getElementById('btnClearFilters');
     const btnAddProduct = document.getElementById('btnAddProduct');
@@ -45,7 +49,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (lowStock) params.append('lowStock', 'true');
             if (params.toString()) url += '?' + params.toString();
             
-            const response = await fetch(url);
+            const response = await fetch(url, { headers: getAuthHeaders() });
             if (!response.ok) throw new Error('Error al cargar productos');
             const data = await response.json();
             allProducts = data;
@@ -145,7 +149,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const response = await fetch('/api/inventory', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...getAuthHeaders()
+                },
                 body: JSON.stringify(data)
             });
 
@@ -204,7 +211,8 @@ document.addEventListener('DOMContentLoaded', function() {
     async function deleteProduct(id) {
         try {
             const response = await fetch(`/api/inventory/${id}`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                headers: getAuthHeaders()
             });
             
             const responseText = await response.text();
@@ -237,7 +245,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const response = await fetch('/api/inventory/movements', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...getAuthHeaders()
+                },
                 body: JSON.stringify(data)
             });
 
