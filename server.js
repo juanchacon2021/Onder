@@ -1800,18 +1800,17 @@ app.get('/', (_req, res) => {
 });
 
 // ===== INICIAR SERVIDOR =====
-app.listen(port, () => {
-  console.log(`🚀 Onder backend listo en http://localhost:${port}`);
-  console.log(`📊 Modo: ${isSupabaseReady() ? 'Supabase' : 'Mock'}`);
-  console.log(`📝 Puerto: ${port}`);
-});
-
-// Export app for serverless environments (Vercel). When running on Vercel,
-// the platform injects `VERCEL` env var — avoid calling `app.listen` there.
 if (!process.env.VERCEL) {
-  // If not on Vercel, app.listen already ran above.
-} 
+  app.listen(port, () => {
+    console.log(`🚀 Onder backend listo en http://localhost:${port}`);
+    console.log(`📊 Modo: ${isSupabaseReady() ? 'Supabase' : 'Mock'}`);
+    console.log(`📝 Puerto: ${port}`);
+  });
+} else {
+  console.log('⚡ Ejecutando en modo serverless (Vercel) — no se inicia listener.');
+}
 
+// Export app for serverless environments (Vercel)
 export default app;
 
 // ===== SERVICIOS =====
