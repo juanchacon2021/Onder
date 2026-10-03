@@ -321,7 +321,30 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json({ limit: '2mb' }));
-app.use(express.static(__dirname));
+
+// Los archivos del frontend (html, css, js, imágenes) viven en la
+// misma carpeta que este server.js, así que antes de servirlos como
+// estáticos bloqueamos explícitamente los que NO deben quedar
+// accesibles por HTTP (el propio código del backend, configuración,
+// etc.). express.static ya bloquea los "dotfiles" (.env, .git) por
+// defecto, así que aquí solo nos preocupan los archivos normales.
+const BLOCKED_STATIC_FILES = new Set([
+  'server.js',
+  'package.json',
+  'package-lock.json',
+  'vercel.json',
+  'README.md'
+]);
+
+app.use((req, res, next) => {
+  const requestedPath = decodeURIComponent(req.path).replace(/^\/+/, '');
+  if (BLOCKED_STATIC_FILES.has(requestedPath) || requestedPath.startsWith('node_modules/')) {
+    return res.status(404).send('Not found');
+  }
+  next();
+});
+
+app.use(express.static(__dirname, { extensions: ['html'], index: 'index.html' }));
 
 const requireAuth = (req, res, next) => {
   const header = req.headers.authorization || '';
