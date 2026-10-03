@@ -266,6 +266,16 @@
         </div>
     </div>
 
+    <script>
+        (function() {
+            const token = localStorage.getItem('onder_token') || sessionStorage.getItem('onder_token');
+            const current = window.location.pathname.split('/').pop() || '';
+            const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+            if (!isLocal && !token && current !== 'login.html') {
+                window.location.href = 'login.html';
+            }
+        })();
+    </script>
     <script src="sidebar.js" defer></script>
     <script src="users.js" defer></script>
 </body>

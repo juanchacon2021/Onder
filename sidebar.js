@@ -163,18 +163,34 @@ document.addEventListener('DOMContentLoaded', function() {
     if (logoutBtn) {
       logoutBtn.addEventListener('click', function(e) {
         e.preventDefault();
-        // usar modal personalizado si está disponible
-        const confirmFn = window.appConfirm || (opts => Promise.resolve(confirm(opts.message)));
-        confirmFn({ title: 'Cerrar sesión', message: '¿Estás seguro de que deseas cerrar sesión?', okText: 'Cerrar sesión', cancelText: 'Cancelar' })
-          .then((ok) => {
-            if (ok) {
-              localStorage.removeItem('onder_token');
-              localStorage.removeItem('onder_user');
-              sessionStorage.removeItem('onder_token');
-              sessionStorage.removeItem('onder_user');
-              window.location.href = 'login.html';
-            }
-          });
+        // usar modal personalizado si está disponible. Si no existe aún, esperar hasta 250ms para que se registre.
+        const getConfirmFn = () => window.appConfirm || (opts => Promise.resolve(confirm(opts.message)));
+
+        const tryConfirm = () => {
+          const confirmFn = getConfirmFn();
+          return confirmFn({ title: 'Cerrar sesión', message: '¿Estás seguro de que deseas cerrar sesión?', okText: 'Cerrar sesión', cancelText: 'Cancelar' });
+        };
+
+        // Si appConfirm no existe, esperar un pequeño lapso para evitar race condition
+        if (!window.appConfirm) {
+          setTimeout(() => {
+            tryConfirm().then((ok) => {
+              if (ok) doLogout();
+            }).catch(() => {});
+          }, 200);
+        } else {
+          tryConfirm().then((ok) => {
+            if (ok) doLogout();
+          }).catch(() => {});
+        }
+
+        function doLogout() {
+          localStorage.removeItem('onder_token');
+          localStorage.removeItem('onder_user');
+          sessionStorage.removeItem('onder_token');
+          sessionStorage.removeItem('onder_user');
+          window.location.href = 'login.html';
+        }
       });
     }
   }

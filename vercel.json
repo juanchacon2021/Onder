@@ -1,6 +1,10 @@
 {
   "version": 2,
   "builds": [
+    { "src": "**/*.html", "use": "@vercel/static" },
+    { "src": "**/*.css", "use": "@vercel/static" },
+    { "src": "**/*.js", "use": "@vercel/static" },
+    { "src": "**/*.{png,jpg,jpeg,svg,webp,ico,map}", "use": "@vercel/static" },
     { "src": "api/index.js", "use": "@vercel/node" }
   ],
   "routes": [
