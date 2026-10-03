@@ -15,7 +15,7 @@ const port = Number.parseInt(process.env.PORT || '3000', 10);
 const jwtSecret = process.env.JWT_SECRET || crypto.randomBytes(32).toString('hex');
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000,http://localhost:3001')
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000,http://localhost:3001,https://onder-barbershop.vercel.app')
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
