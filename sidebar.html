@@ -55,3 +55,29 @@
     </div>
   </div>
 </aside>
+
+<!-- Global confirm modal (estilo del sistema) -->
+<div id="globalConfirm" class="modal-overlay" aria-hidden="true" role="dialog" aria-modal="true">
+  <div class="modal" role="document">
+    <header class="modal-header">
+      <h3 id="globalConfirmTitle">Confirmar</h3>
+    </header>
+    <div class="modal-body">
+      <p id="globalConfirmMessage">¿Estás seguro?</p>
+    </div>
+    <footer class="modal-footer">
+      <button type="button" class="btn btn-cancel" id="globalConfirmCancel">Cancelar</button>
+      <button type="button" class="btn btn-confirm" id="globalConfirmOk">Aceptar</button>
+    </footer>
+  </div>
+</div>
+
+<!-- Global alert/info modal -->
+<div id="globalAlert" class="alert-overlay" aria-hidden="true" role="status">
+  <div class="alert-box" role="document">
+    <div class="alert-body" id="globalAlertMessage">Mensaje</div>
+    <div class="alert-footer">
+      <button id="globalAlertOk" class="alert-ok">OK</button>
+    </div>
+  </div>
+</div>

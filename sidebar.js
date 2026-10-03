@@ -163,13 +163,18 @@ document.addEventListener('DOMContentLoaded', function() {
     if (logoutBtn) {
       logoutBtn.addEventListener('click', function(e) {
         e.preventDefault();
-        if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
-          localStorage.removeItem('onder_token');
-          localStorage.removeItem('onder_user');
-          sessionStorage.removeItem('onder_token');
-          sessionStorage.removeItem('onder_user');
-          window.location.href = 'login.html';
-        }
+        // usar modal personalizado si está disponible
+        const confirmFn = window.appConfirm || (opts => Promise.resolve(confirm(opts.message)));
+        confirmFn({ title: 'Cerrar sesión', message: '¿Estás seguro de que deseas cerrar sesión?', okText: 'Cerrar sesión', cancelText: 'Cancelar' })
+          .then((ok) => {
+            if (ok) {
+              localStorage.removeItem('onder_token');
+              localStorage.removeItem('onder_user');
+              sessionStorage.removeItem('onder_token');
+              sessionStorage.removeItem('onder_user');
+              window.location.href = 'login.html';
+            }
+          });
       });
     }
   }

@@ -398,6 +398,81 @@ document.addEventListener('DOMContentLoaded', () => {
     }).join('');
   }
 
+  // Helper: muestra un modal de confirmación reutilizable
+  function appConfirm({ title = 'Confirmar', message = '¿Estás seguro?', okText = 'Aceptar', cancelText = 'Cancelar' } = {}) {
+    return new Promise((resolve) => {
+      const overlay = document.getElementById('globalConfirm');
+      const titleEl = document.getElementById('globalConfirmTitle');
+      const msgEl = document.getElementById('globalConfirmMessage');
+      const okBtn = document.getElementById('globalConfirmOk');
+      const cancelBtn = document.getElementById('globalConfirmCancel');
+
+      if (!overlay || !okBtn || !cancelBtn || !titleEl || !msgEl) {
+        // Fallback to native confirm if modal not present
+        resolve(confirm(message));
+        return;
+      }
+
+      titleEl.textContent = title;
+      msgEl.textContent = message;
+      okBtn.textContent = okText;
+      cancelBtn.textContent = cancelText;
+
+      function cleanup() {
+        overlay.setAttribute('aria-hidden', 'true');
+        okBtn.removeEventListener('click', onOk);
+        cancelBtn.removeEventListener('click', onCancel);
+        overlay.removeEventListener('click', onOutside);
+      }
+
+      function onOk(e) { e.stopPropagation(); cleanup(); resolve(true); }
+      function onCancel(e) { e.stopPropagation(); cleanup(); resolve(false); }
+      function onOutside(e) { if (e.target === overlay) { cleanup(); resolve(false); } }
+
+      okBtn.addEventListener('click', onOk);
+      cancelBtn.addEventListener('click', onCancel);
+      overlay.addEventListener('click', onOutside);
+
+      overlay.setAttribute('aria-hidden', 'false');
+      // Focus manejo accesible
+      okBtn.focus();
+    });
+  }
+  // Exponer globalmente para que otros scripts (p. ej. sidebar.js) lo invoquen
+  window.appConfirm = appConfirm;
+
+  // Helper: muestra un modal informativo (tipo alert) reutilizable
+  function appAlert({ message = '', okText = 'OK' } = {}) {
+    return new Promise((resolve) => {
+      const overlay = document.getElementById('globalAlert');
+      const msgEl = document.getElementById('globalAlertMessage');
+      const okBtn = document.getElementById('globalAlertOk');
+
+      if (!overlay || !msgEl || !okBtn) {
+        // Fallback a alert nativo
+        alert(message);
+        resolve();
+        return;
+      }
+
+      msgEl.textContent = message;
+      okBtn.textContent = okText;
+
+      function cleanup() {
+        overlay.setAttribute('aria-hidden', 'true');
+        okBtn.removeEventListener('click', onOk);
+      }
+
+      function onOk(e) { e.stopPropagation(); cleanup(); resolve(); }
+
+      okBtn.addEventListener('click', onOk);
+      overlay.setAttribute('aria-hidden', 'false');
+      okBtn.focus();
+    });
+  }
+
+  window.appAlert = appAlert;
+
   function renderReminderAlerts(reminders) {
     if (!$notificationsList) return;
 

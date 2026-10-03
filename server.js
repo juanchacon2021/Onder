@@ -1806,6 +1806,14 @@ app.listen(port, () => {
   console.log(`📝 Puerto: ${port}`);
 });
 
+// Export app for serverless environments (Vercel). When running on Vercel,
+// the platform injects `VERCEL` env var — avoid calling `app.listen` there.
+if (!process.env.VERCEL) {
+  // If not on Vercel, app.listen already ran above.
+} 
+
+export default app;
+
 // ===== SERVICIOS =====
 
 // GET /api/services - Listar servicios
